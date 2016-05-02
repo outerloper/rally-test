@@ -12,7 +12,7 @@
 
 
     <% with (scripts) { %>
-    <% [].concat(jasmine, vendor, helpers, reporters, src, specs).forEach(function(script){ %>
+    <% [].concat(jasmine, boot, vendor, helpers, reporters, src, specs, reporters).forEach(function(script){ %>
     <script type="text/javascript" src="<%= script %>"></script>
     <% }) %>
     <% }; %>
