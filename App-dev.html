@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<html>
+<head>
+    <title>Milestone Burnup with Projection</title>
+
+
+    <script type="text/javascript" src="https://rally1.rallydev.com/apps/2.1/sdk-debug.js"></script>
+
+    <script type="text/javascript">
+        Rally.loadScripts(
+                [
+                    "App.dev.js",
+                    "App.util.js",
+                    "App.js"
+                ],
+                function () {
+                    Rally.launchApp('MilestoneBurnup', {
+                        name: "Milestone Burnup with Projection"
+                    });
+                }, true);
+    </script>
+
+
+    <link rel="stylesheet" type="text/css" href="app.css"/>
+</head>
+<body>
+</body>
+</html>
