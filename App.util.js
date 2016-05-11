@@ -52,3 +52,44 @@ function formatDate(date) {
 function dateToIsoString(date) {
     return date.toISOString().substring(0, 10);
 }
+
+
+function linearProjectionStep(startIndex, startValue, endIndex, endValue) {
+    if (startIndex >= 0 && startIndex < endIndex && startValue != endValue) {
+        return (endValue - startValue) / (endIndex - startIndex);
+    } else {
+        console.log("Unable to calculate projection step for values: (startIndex=" +
+            startIndex + ", startValue=" + startValue + ", endIndex=" + endIndex + ", endValue=" + endValue + ")"
+        );
+        return null;
+    }
+}
+
+function linearProjectionData(startIndex, startValue, endIndex, endValue, length) {
+    var projectionStep = linearProjectionStep(startIndex, startValue, endIndex, endValue);
+    if (projectionStep) {
+        var data = [];
+        var i;
+        for (i = 0; i < startIndex; i++) {
+            data[i] = null;
+        }
+        data[i] = startValue;
+        i++;
+        var targetIndex = startIndex + length;
+        for (; i < targetIndex; i++) {
+            data[i] = data[i - 1] + projectionStep;
+        }
+        return data;
+    } else {
+        return null;
+    }
+}
+
+function linearProjectionTargetIndex(startIndex, startValue, endIndex, endValue, targetValue) {
+    var projectionStep = linearProjectionStep(startIndex, startValue, endIndex, endValue);
+    if (projectionStep && (endValue - startValue) * (targetValue - endValue) >= 0) {
+        return endIndex + Math.ceil((targetValue - endValue) / projectionStep);
+    } else {
+        return null;
+    }
+}

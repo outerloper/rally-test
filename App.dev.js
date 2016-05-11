@@ -72,23 +72,23 @@ window.dev = {
             return 53823409519; // 15.1 Development
         },
         getProjectId: function () {
-            return dev.avpsProjectId("slot");
+            return dev.avpsProjectId("avps");
         },
-        _getDataForChart: function () {
+        getDataForChart: function () {
             var data = {
                 "series": [{
                     "name": "In Progress",
-                    "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 13, 13, 26, 27, 26, 18, 5, 13, 21, 16, 16, 16, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21],
+                    "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 13, 13, 26, 27, 26, 18, 5, 13, 21, 16, 16, 16, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21],
                     "type": "column",
                     "dashStyle": "Solid"
                 }, {
                     "name": "Completed",
-                    "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 13, 13, 18, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13],
+                    "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 13, 13, 18, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13],
                     "type": "column",
                     "dashStyle": "Solid"
                 }, {
                     "name": "Accepted",
-                    "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 9, 9, 9, 9, 9, 14, 14, 14, 14, 14, 18, 18, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25],
+                    "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 9, 9, 9, 9, 9, 14, 14, 14, 18, 25, 25, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
                     "type": "column",
                     "dashStyle": "Solid"
                 }, {
@@ -106,7 +106,7 @@ window.dev = {
             };
 
             var calculator = Ext.create("My.MilestoneBurnUpCalculator");
-            calculator.endDate = new Date("2016-05-18");
+            calculator.endDate = new Date(data.categories[data.categories.length - 1]);
             calculator.today = new Date("2016-05-07");
             calculator.postProcessCalculation(data);
 

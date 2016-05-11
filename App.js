@@ -84,13 +84,33 @@ Ext.define("MilestoneBurnup", Ext.merge({
 
         postProcessCalculation: function (data) {
             this.chartConfig = {};
+            this.truncateBeforeWorkStart(data);
             this.stripFutureBars(data);
             this.addPlotLines(data);
             this.addProjection(data);
+            this.addIdealLine(data);
             this.addSubtitle();
         },
 
         today: new Date(),
+
+        truncateBeforeWorkStart: function(data) {
+            var actualStartIndex = this.findDateIndex(data, this.today);
+            data.series.forEach(function (series) {
+                if (series.name != "Planned") {
+                    for (var i = 0; i < series.data.length; i++) {
+                        if (series.data[i] > 0 && i < actualStartIndex) {
+                            actualStartIndex = i;
+                            break;
+                        }
+                    }
+                }
+            });
+            data.series.forEach(function(series) {
+                series.data = series.data.slice(actualStartIndex);
+            });
+            data.categories = data.categories.slice(actualStartIndex);
+        },
 
         /**
          * @param {Object} data
@@ -127,33 +147,17 @@ Ext.define("MilestoneBurnup", Ext.merge({
         },
 
         addProjection: function (data) {
-            var currentIndex = this.findDateIndex(data, this.today);
-            var actualStartIndex = currentIndex;
-            data.series.forEach(function (series) {
-                if (series.name != "Planned") {
-                    for (var i = 0; i < series.data.length; i++) {
-                        if (series.data[i] > 0 && i < actualStartIndex) {
-                            actualStartIndex = i;
-                        }
-                    }
-                }
-            });
-            var currentAccepted = this.getSeries(data, "Accepted")[currentIndex];
+            var acceptedData = this.getSeries(data, "Accepted");
+            var todayIndex = this.findDateIndex(data, this.today);
+            var todayAcceptedPoints = acceptedData[todayIndex];
+            var todayPlannedPoints = this.getSeries(data, "Planned")[todayIndex];
+            var length = acceptedData.length;
 
-            if (actualStartIndex >= 0 && currentAccepted > 0 && actualStartIndex < currentIndex) {
-                var projectionStep = currentAccepted / (currentIndex - actualStartIndex);
-                var projection = data.categories.reduce(function (projection, value, index) {
-                    if (index <= actualStartIndex) {
-                        projection.push(index == actualStartIndex ? 0 : null);
-                    } else {
-                        projection.push((projection[index - 1] || 0) + projectionStep);
-                    }
-                    return projection;
-                }, []);
-
+            var projectionData = linearProjectionData(0, 0, todayIndex, todayAcceptedPoints, length);
+            if (projectionData) {
                 data.series.push({
                     name: "Projection",
-                    data: projection,
+                    data: projectionData,
                     type: "line",
                     dashStyle: "Dash",
                     marker: {enabled: false},
@@ -161,10 +165,25 @@ Ext.define("MilestoneBurnup", Ext.merge({
                     lineWidth: 1
                 });
 
-                var currentPlanned = this.getSeries(data, "Planned")[currentIndex];
-                var daysRemaining = (currentPlanned - currentAccepted) / projectionStep;
+                var idealData = linearProjectionData(0, 0, length - 1, todayPlannedPoints, length);
+                if (idealData) {
+                    data.series.push({
+                        name: "Ideal",
+                        data: idealData,
+                        type: "line",
+                        dashStyle: "Dot",
+                        marker: {enabled: false},
+                        enableMouseTracking: false,
+                        lineWidth: 1
+                    });
+                }
+
+                var daysRemaining = linearProjectionTargetIndex(0, 0, todayIndex, todayAcceptedPoints, todayPlannedPoints);
                 this.projectedEndDate = Rally.util.DateTime.add(this.today, "day", daysRemaining);
             }
+        },
+
+        addIdealLine: function() {
         },
 
         addSubtitle: function () {
@@ -199,7 +218,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
 
     createChart: function () {
         return Ext.create("Rally.ui.chart.Chart", {
-            chartColors: ["#AEC", "#8FCD88", "#5EAC00", "#005EB8", "#000"],
+            chartColors: ["#AEC", "#8FCD88", "#5EAC00", "#005EB8", "#000", "#000"],
             chartConfig: {
                 title: {text: "Milestone"},
                 chart: {zoomType: "xy"},
