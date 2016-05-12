@@ -32,7 +32,13 @@ Ext.define("MilestoneBurnup", Ext.merge({
                 this.add(Ext.merge(this.createChart(), chartSetup));
             },
             failure: function (error) {
-                console.error("Unable to fetch chart data: ", error);
+                var lines = ["Unable to fetch data. Click the gear and check your App Settings."];
+                if (error && error.error && error.error.errors) {
+                    lines = lines.concat(error.error.errors);
+                } else {
+                    lines.push(error);
+                }
+                this.add({xtype: "container", html: lines.join("<br/>"), componentCls: "center"});
             },
             scope: this
         });
@@ -87,14 +93,13 @@ Ext.define("MilestoneBurnup", Ext.merge({
             this.truncateBeforeWorkStart(data);
             this.stripFutureBars(data);
             this.addPlotLines(data);
-            this.addProjection(data);
-            this.addIdealLine(data);
+            this.addProjectionAndIdealLine(data);
             this.addSubtitle();
         },
 
         today: new Date(),
 
-        truncateBeforeWorkStart: function(data) {
+        truncateBeforeWorkStart: function (data) {
             var actualStartIndex = this.findDateIndex(data, this.today);
             data.series.forEach(function (series) {
                 if (series.name != "Planned") {
@@ -106,7 +111,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
                     }
                 }
             });
-            data.series.forEach(function(series) {
+            data.series.forEach(function (series) {
                 series.data = series.data.slice(actualStartIndex);
             });
             data.categories = data.categories.slice(actualStartIndex);
@@ -146,7 +151,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
             ];
         },
 
-        addProjection: function (data) {
+        addProjectionAndIdealLine: function (data) {
             var acceptedData = this.getSeries(data, "Accepted");
             var todayIndex = this.findDateIndex(data, this.today);
             var todayAcceptedPoints = acceptedData[todayIndex];
@@ -181,9 +186,6 @@ Ext.define("MilestoneBurnup", Ext.merge({
                 var daysRemaining = linearProjectionTargetIndex(0, 0, todayIndex, todayAcceptedPoints, todayPlannedPoints);
                 this.projectedEndDate = Rally.util.DateTime.add(this.today, "day", daysRemaining);
             }
-        },
-
-        addIdealLine: function() {
         },
 
         addSubtitle: function () {
@@ -330,6 +332,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
             storeConfig: storeConfig,
 
             exceptionHandler: loggingSnapshotStoreExceptionHandler,
+            queryErrorMessage: "No work items found for milestone <strong>" + milestone.get("Name") + "</strong>.",
 
             chartConfig: {
                 title: {text: milestone.get("Name")}
