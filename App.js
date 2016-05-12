@@ -158,7 +158,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
             var todayPlannedPoints = this.getSeries(data, "Planned")[todayIndex];
             var length = acceptedData.length;
 
-            var projectionData = linearProjectionData(0, 0, todayIndex, todayAcceptedPoints, length);
+            var projectionData = linearProjectionData(0, 0, todayIndex, todayAcceptedPoints, length, todayPlannedPoints);
             if (projectionData) {
                 data.series.push({
                     name: "Projection",
@@ -184,7 +184,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
                 }
 
                 var daysRemaining = linearProjectionTargetIndex(0, 0, todayIndex, todayAcceptedPoints, todayPlannedPoints);
-                this.projectedEndDate = Rally.util.DateTime.add(this.today, "day", daysRemaining);
+                this.projectedEndDate = addBusinessDays(new Date(data.categories[0]), daysRemaining);
             }
         },
 
@@ -278,14 +278,13 @@ Ext.define("MilestoneBurnup", Ext.merge({
                 var filter = Rally.data.wsapi.Filter.fromQueryString("(Milestones.ObjectID contains " + milestone.getId() + ")");
                 return Deft.Promise.all(
                     ["Defect", "HierarchicalRequirement", "PortfolioItem/TeamFeature"].map(function (artifactType) {
-                        var deft = Ext.create('Rally.data.wsapi.Store', {
+                        return Ext.create('Rally.data.wsapi.Store', {
                             model: artifactType,
                             filters: filter,
                             fetch: ["ObjectID"],
                             context: context,
                             autoLoad: true
                         }).load();
-                        return deft;
                     })
                 ).then({
                     success: function (results) {

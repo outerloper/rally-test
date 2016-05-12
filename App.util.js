@@ -65,7 +65,7 @@ function linearProjectionStep(startIndex, startValue, endIndex, endValue) {
     }
 }
 
-function linearProjectionData(startIndex, startValue, endIndex, endValue, length) {
+function linearProjectionData(startIndex, startValue, endIndex, endValue, length, targetValue) {
     var projectionStep = linearProjectionStep(startIndex, startValue, endIndex, endValue);
     if (projectionStep) {
         var data = [];
@@ -76,7 +76,7 @@ function linearProjectionData(startIndex, startValue, endIndex, endValue, length
         data[i] = startValue;
         i++;
         var targetIndex = startIndex + length;
-        for (; i < targetIndex; i++) {
+        for (; i < targetIndex && (!targetValue || data[i - 1] <= targetValue); i++) {
             data[i] = data[i - 1] + projectionStep;
         }
         return data;
@@ -88,8 +88,22 @@ function linearProjectionData(startIndex, startValue, endIndex, endValue, length
 function linearProjectionTargetIndex(startIndex, startValue, endIndex, endValue, targetValue) {
     var projectionStep = linearProjectionStep(startIndex, startValue, endIndex, endValue);
     if (projectionStep && (endValue - startValue) * (targetValue - endValue) >= 0) {
-        return endIndex + Math.ceil((targetValue - endValue) / projectionStep);
+        return endIndex + Math.round((targetValue - endValue) / projectionStep);
     } else {
         return null;
     }
+}
+
+function addBusinessDays(date, businessDays) {
+    var days = date.getDate();
+    var d = date.getDay();
+    while (businessDays > 0) {
+        ++days;
+        d = (d + 1) % 7;
+        if (d != 0 && d != 6) {
+            --businessDays;
+        }
+    }
+    date.setDate(days);
+    return date;
 }
