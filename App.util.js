@@ -40,9 +40,7 @@ function loggingSnapshotStoreExceptionHandler(proxy, response, operation) {
     messages.Errors.forEach(log);
     messages.Warnings.forEach(log);
 
-    console.log("proxy =", window.proxy = proxy);
-    console.log("response =", window.response = response);
-    console.log("operation =", window.operation = operation);
+    console.log("proxy:", proxy, "response:", response, "operation:", operation);
 }
 
 function formatDate(date) {
@@ -100,7 +98,7 @@ function addBusinessDays(date, businessDays) {
     while (businessDays > 0) {
         ++days;
         d = (d + 1) % 7;
-        if (d != 0 && d != 6) {
+        if (d !== 0 && d != 6) {
             --businessDays;
         }
     }

@@ -49,9 +49,7 @@ function loggingSnapshotStoreExceptionHandler(proxy, response, operation) {
     messages.Errors.forEach(log);
     messages.Warnings.forEach(log);
 
-    console.log("proxy =", window.proxy = proxy);
-    console.log("response =", window.response = response);
-    console.log("operation =", window.operation = operation);
+    console.log("proxy:", proxy, "response:", response, "operation:", operation);
 }
 
 function formatDate(date) {
@@ -74,7 +72,7 @@ function linearProjectionStep(startIndex, startValue, endIndex, endValue) {
     }
 }
 
-function linearProjectionData(startIndex, startValue, endIndex, endValue, length) {
+function linearProjectionData(startIndex, startValue, endIndex, endValue, length, targetValue) {
     var projectionStep = linearProjectionStep(startIndex, startValue, endIndex, endValue);
     if (projectionStep) {
         var data = [];
@@ -85,7 +83,7 @@ function linearProjectionData(startIndex, startValue, endIndex, endValue, length
         data[i] = startValue;
         i++;
         var targetIndex = startIndex + length;
-        for (; i < targetIndex; i++) {
+        for (; i < targetIndex && (!targetValue || data[i - 1] <= targetValue); i++) {
             data[i] = data[i - 1] + projectionStep;
         }
         return data;
@@ -97,10 +95,24 @@ function linearProjectionData(startIndex, startValue, endIndex, endValue, length
 function linearProjectionTargetIndex(startIndex, startValue, endIndex, endValue, targetValue) {
     var projectionStep = linearProjectionStep(startIndex, startValue, endIndex, endValue);
     if (projectionStep && (endValue - startValue) * (targetValue - endValue) >= 0) {
-        return endIndex + Math.ceil((targetValue - endValue) / projectionStep);
+        return endIndex + Math.round((targetValue - endValue) / projectionStep);
     } else {
         return null;
     }
+}
+
+function addBusinessDays(date, businessDays) {
+    var days = date.getDate();
+    var d = date.getDay();
+    while (businessDays > 0) {
+        ++days;
+        d = (d + 1) % 7;
+        if (d !== 0 && d != 6) {
+            --businessDays;
+        }
+    }
+    date.setDate(days);
+    return date;
 }
 
                 Ext.define("MilestoneBurnup", Ext.merge({
@@ -127,9 +139,7 @@ function linearProjectionTargetIndex(startIndex, startValue, endIndex, endValue,
             xtype: 'rallymilestonecombobox',
             extend: "Rally.ui.combobox.MilestoneComboBox",
             alias: "widget.mymilestonecombobox",
-            editable: false,
-            noEntryText: "-- choose a milestone --",
-            allowNoEntry: true
+            editable: false
         });
 
         this.getDataForChart().then({
@@ -263,7 +273,7 @@ function linearProjectionTargetIndex(startIndex, startValue, endIndex, endValue,
             var todayPlannedPoints = this.getSeries(data, "Planned")[todayIndex];
             var length = acceptedData.length;
 
-            var projectionData = linearProjectionData(0, 0, todayIndex, todayAcceptedPoints, length);
+            var projectionData = linearProjectionData(0, 0, todayIndex, todayAcceptedPoints, length, todayPlannedPoints);
             if (projectionData) {
                 data.series.push({
                     name: "Projection",
@@ -289,7 +299,7 @@ function linearProjectionTargetIndex(startIndex, startValue, endIndex, endValue,
                 }
 
                 var daysRemaining = linearProjectionTargetIndex(0, 0, todayIndex, todayAcceptedPoints, todayPlannedPoints);
-                this.projectedEndDate = Rally.util.DateTime.add(this.today, "day", daysRemaining);
+                this.projectedEndDate = addBusinessDays(new Date(data.categories[0]), daysRemaining);
             }
         },
 
@@ -371,26 +381,25 @@ function linearProjectionTargetIndex(startIndex, startValue, endIndex, endValue,
             }),
             this.getMilestoneId()
         ]).then({
-            success: function (modelAndId) {
-                var model = modelAndId[0];
-                var id = modelAndId[1];
+            success: function (milestoneModelAndId) {
+                var model = milestoneModelAndId[0];
+                var id = milestoneModelAndId[1];
                 return id ? model.load(id) : rejectedPromise("No milestone set");
             },
             scope: this
         }).then({
             success: function (milestone) {
-                var context = {project: this.getProjectId() ? "/" + "project" + "/" + this.getProjectId() : null};
+                var context = {project: this.getProjectId() ? "/project/" + this.getProjectId() : null};
                 var filter = Rally.data.wsapi.Filter.fromQueryString("(Milestones.ObjectID contains " + milestone.getId() + ")");
                 return Deft.Promise.all(
                     ["Defect", "HierarchicalRequirement", "PortfolioItem/TeamFeature"].map(function (artifactType) {
-                        var deft = Ext.create('Rally.data.wsapi.Store', {
+                        return Ext.create('Rally.data.wsapi.Store', {
                             model: artifactType,
                             filters: filter,
                             fetch: ["ObjectID"],
                             context: context,
                             autoLoad: true
                         }).load();
-                        return deft;
                     })
                 ).then({
                     success: function (results) {

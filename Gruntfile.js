@@ -9,7 +9,7 @@ if (module) {
         grunt.loadNpmTasks('grunt-contrib-jasmine');
         grunt.loadNpmTasks('grunt-contrib-jshint');
 
-        grunt.registerTask('test', ['jshint','jasmine']);
+        grunt.registerTask('test', ['jshint', 'jasmine']);
         grunt.registerTask('default', ['test']);
 
         spec = grunt.option('spec') || '*';
@@ -22,19 +22,17 @@ if (module) {
                 dev: {
                     src: "./*.js",
                     options: {
-                        vendor:["https://rally1.rallydev.com/apps/"+config.sdk+"/sdk-debug.js"],
+                        vendor: ["https://rally1.rallydev.com/apps/" + config.sdk + "/sdk-debug.js"],
                         template: 'test/specs.tmpl',
                         specs: "test/**/" + spec + "Spec.js",
                         helpers: []
                     }
                 }
             },
-            jshint:{
-              all: ['test/**/*.js']
+            jshint: {
+                all: ['test/**/*.js']
             }
         });
-  }
-
-
+    }
 }
 

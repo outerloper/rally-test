@@ -22,9 +22,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
             xtype: 'rallymilestonecombobox',
             extend: "Rally.ui.combobox.MilestoneComboBox",
             alias: "widget.mymilestonecombobox",
-            editable: false,
-            noEntryText: "-- choose a milestone --",
-            allowNoEntry: true
+            editable: false
         });
 
         this.getDataForChart().then({
@@ -266,15 +264,15 @@ Ext.define("MilestoneBurnup", Ext.merge({
             }),
             this.getMilestoneId()
         ]).then({
-            success: function (modelAndId) {
-                var model = modelAndId[0];
-                var id = modelAndId[1];
+            success: function (milestoneModelAndId) {
+                var model = milestoneModelAndId[0];
+                var id = milestoneModelAndId[1];
                 return id ? model.load(id) : rejectedPromise("No milestone set");
             },
             scope: this
         }).then({
             success: function (milestone) {
-                var context = {project: this.getProjectId() ? "/" + "project" + "/" + this.getProjectId() : null};
+                var context = {project: this.getProjectId() ? "/project/" + this.getProjectId() : null};
                 var filter = Rally.data.wsapi.Filter.fromQueryString("(Milestones.ObjectID contains " + milestone.getId() + ")");
                 return Deft.Promise.all(
                     ["Defect", "HierarchicalRequirement", "PortfolioItem/TeamFeature"].map(function (artifactType) {

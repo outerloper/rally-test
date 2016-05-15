@@ -22,59 +22,30 @@ window.dev = {
         }, [actualColumns.join('\t') + '\t' + data.length]).join('\n');
     },
 
-    /**
-     * @param {string} projectName E.g. schedule, profit, slot. Fallback to whole avps
-     * @returns {number} Rally ID of project
-     */
-    avpsProjectId: function (projectName) {
-        switch ((projectName || "").toLowerCase().replace(/[ -_]*/g, "")) {
-            case "codeshare":
-                return 52219765529;
-            case "fleet":
-                return 52953911025;
-            case "profit":
-            case 'network':
-                return 52220062189;
-            case "schedule":
-                return 52220062990;
-            case "schedulekrk":
-                return 53630224881;
-            case "scheduledfw":
-                return 53630226508;
-            case "slot":
-                return 52219769418;
-            case "systems":
-                return 52219764059;
-            default:
-                return 52219602590;
-        }
+    projects: {
+        csm: 52219765529,
+        fm: 52953911025,
+        pm: 52220062189,
+        sm: 52220062990,
+        smk: 53630224881,
+        smd: 53630226508,
+        slm: 52219769418,
+        s: 52219764059,
+        a: 52219602590
     },
 
-    /**
-     * @returns {number} Sabre Production Workspace ID
-     */
-    sabreWorkspaceId: function () {
-        return 27154375360;
-    },
-
-    /**
-     * @param {Object} permissions Permissions Object. When no specified, permission from current Rally app are taken.
-     * @returns {string} String representation of permissions
-     */
-    rallyPermissionsToString: function (permissions) {
-        return (permissions || Rally.getApp().context.getPermissions().userPermissions).map(function (permission) {
-            return permission.Role + '\t' + permission._refObjectName;
-        }).join('\n');
+    milestones: {
+        d15: 53823409519
     },
 
     app: {
         getMilestoneId: function () {
-            return 53823409519; // 15.1 Development
+            return dev.milestones.d15
         },
         getProjectId: function () {
-            return dev.avpsProjectId("avps");
+            return dev.projects.fm;
         },
-        getDataForChart: function () {
+        _getDataForChart: function () {
             var data = {
                 "series": [{
                     "name": "In Progress",
