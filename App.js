@@ -42,8 +42,17 @@ Ext.define("MilestoneBurnup", Ext.merge({
         });
     },
 
+    //listeners: { // TODO when no milestone set, display settings immediately
+    //    ready: function () {
+    //        if (!this.getMilestoneId()) {
+    //            this.showSettings();
+    //        }
+    //    }
+    //},
+
     burnupCalculator: Ext.define("My.MilestoneBurnUpCalculator", {
         extend: "Rally.data.lookback.calculator.TimeSeriesCalculator",
+        mixins: ["My.BurnUpCalculation"],
 
         getMetrics: function () {
             return [
@@ -82,137 +91,8 @@ Ext.define("MilestoneBurnup", Ext.merge({
 
         runCalculation: function (snapshots, snapshotsToSubtract) {
             var data = this.callParent(arguments);
-            this.postProcessCalculation(data);
+            this.chartConfig = this.calculate(data, this.calculationConfig);
             return data;
-        },
-
-        postProcessCalculation: function (data) {
-            this.chartConfig = {};
-            this.truncateBeforeWorkStart(data);
-            this.stripFutureBars(data);
-            this.addPlotLines(data);
-            this.addProjectionAndIdealLine(data);
-            this.addSubtitle();
-        },
-
-        today: new Date(),
-
-        truncateBeforeWorkStart: function (data) {
-            var actualStartIndex = this.findDateIndex(data, this.today);
-            data.series.forEach(function (series) {
-                if (series.name != "Planned") {
-                    for (var i = 0; i < series.data.length; i++) {
-                        if (series.data[i] > 0 && i < actualStartIndex) {
-                            actualStartIndex = i;
-                            break;
-                        }
-                    }
-                }
-            });
-            data.series.forEach(function (series) {
-                series.data = series.data.slice(actualStartIndex);
-            });
-            data.categories = data.categories.slice(actualStartIndex);
-        },
-
-        /**
-         * @param {Object} data
-         *  {
-         *      series: [
-         *          {name: "Planned", data: [12, 14, 14, 15, ...] }, ...
-         *      ],
-         *      categories: ["2016-03-28", "2016-03-29", ...]
-         *  }
-         */
-        stripFutureBars: function (data) {
-            var currentIndex = this.findDateIndex(data, this.today) + 1;
-            data.series.forEach(function (series) {
-                if (series.name != "Planned") {
-                    for (var i = currentIndex; i < series.data.length; i++) {
-                        series.data[i] = null;
-                    }
-                }
-            });
-        },
-
-        addPlotLines: function (data) {
-            this.chartConfig.xAxis = this.chartConfig.xAxis || {};
-            this.chartConfig.xAxis.plotLines = [
-                {
-                    value: this.findDateIndex(data, this.endDate),
-                    color: "#000", width: 2, label: {text: "planned end"}
-                },
-                {
-                    value: this.findDateIndex(data, this.today, true),
-                    color: "#AAA", width: 2, label: {text: "today"}, dashStyle: "ShortDash"
-                }
-            ];
-        },
-
-        addProjectionAndIdealLine: function (data) {
-            var acceptedData = this.getSeries(data, "Accepted");
-            var todayIndex = this.findDateIndex(data, this.today);
-            var todayAcceptedPoints = acceptedData[todayIndex];
-            var todayPlannedPoints = this.getSeries(data, "Planned")[todayIndex];
-            var length = acceptedData.length;
-
-            var projectionData = linearProjectionData(0, 0, todayIndex, todayAcceptedPoints, length, todayPlannedPoints);
-            if (projectionData) {
-                data.series.push({
-                    name: "Projection",
-                    data: projectionData,
-                    type: "line",
-                    dashStyle: "Dash",
-                    marker: {enabled: false},
-                    enableMouseTracking: false,
-                    lineWidth: 1
-                });
-
-                var idealData = linearProjectionData(0, 0, length - 1, todayPlannedPoints, length);
-                if (idealData) {
-                    data.series.push({
-                        name: "Ideal",
-                        data: idealData,
-                        type: "line",
-                        dashStyle: "Dot",
-                        marker: {enabled: false},
-                        enableMouseTracking: false,
-                        lineWidth: 1
-                    });
-                }
-
-                var daysRemaining = linearProjectionTargetIndex(0, 0, todayIndex, todayAcceptedPoints, todayPlannedPoints);
-                this.projectedEndDate = addBusinessDays(new Date(data.categories[0]), daysRemaining);
-            }
-        },
-
-        addSubtitle: function () {
-            var parts = [];
-            if (this.endDate) {
-                parts.push("Planned End: " + formatDate(this.endDate));
-            }
-            if (this.projectedEndDate) {
-                parts.push("Projected End: " + formatDate(this.projectedEndDate));
-            }
-            this.chartConfig.subtitle = {text: parts.join(" &nbsp;&nbsp;&nbsp; "), useHTML: true};
-        },
-
-        findDateIndex: function (data, date, floating) {
-            var searchedDateString = (date instanceof Date) ? dateToIsoString(date) : date;
-            for (var i = 0; i < data.categories.length; i++) {
-                var dateString = data.categories[i];
-                if (dateString >= searchedDateString) {
-                    return dateString > searchedDateString ? i - (floating ? 0.5 : 1) : i;
-                }
-            }
-            return -1;
-        },
-
-        getSeries: function (data, name) {
-            var series = data.series.find(function (aSeries) {
-                return aSeries.name == name;
-            });
-            return series ? series.data : [];
         }
     }),
 
@@ -226,10 +106,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
                     title: {text: "Date"},
                     labels: {
                         maxStaggerLines: 1,
-                        step: 5,
-                        formatter: function () {
-                            return formatDate(this.value);
-                        }
+                        step: 5
                     }
                 },
                 yAxis: {
@@ -322,7 +199,10 @@ Ext.define("MilestoneBurnup", Ext.merge({
         return {
             calculatorType: "My.MilestoneBurnUpCalculator",
             calculatorConfig: {
-                endDate: milestone.get("TargetDate")
+                endDate: milestone.get("TargetDate"),
+                calculationConfig: {
+                    endDate: milestone.get("TargetDate")
+                }
             },
 
             storeType: "Rally.data.lookback.SnapshotStore",
