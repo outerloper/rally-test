@@ -1,6 +1,6 @@
 {
     "name": "Milestone Burnup with Projection",
-    "className": "MilestoneBurnup",
+    "className": "MilestoneBurnupWithProjection",
     "server": "https://rally1.rallydev.com",
     "sdk": "2.1",
     "javascript": [

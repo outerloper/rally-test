@@ -59,21 +59,6 @@ function dateToIsoString(date) {
 }
 
 
-function addBusinessDays(date, businessDays) {
-    var days = date.getDate();
-    var d = date.getDay();
-    while (businessDays > 0) {
-        ++days;
-        d = (d + 1) % 7;
-        if (d !== 0 && d != 6) {
-            --businessDays;
-        }
-    }
-    date.setDate(days);
-    return date;
-}
-
-
 Ext.define("My.BurnUpCalculation", {
 
     /**
@@ -90,8 +75,9 @@ Ext.define("My.BurnUpCalculation", {
     calculate: function (data, config) {
         this.calcConfig.today = config.today || new Date();
         this.calcConfig.endDate = config.endDate;
+        this.calcConfig.customStartDate = config.customStartDate;
 
-        this.truncateBeforeWorkStart(data);
+        this.adjustChartStart(data);
         this.stripFutureBars(data);
         this.addPlotLines(data);
         this.addProjectionAndIdealLine(data);
@@ -104,22 +90,23 @@ Ext.define("My.BurnUpCalculation", {
     calcConfig: {},
     chartConfig: {},
 
-    truncateBeforeWorkStart: function (data) {
-        var actualStartIndex = this.findDateIndex(data, this.calcConfig.today, false, data.categories.length);
+    adjustChartStart: function (data) {
+        var firstInProgressIndex = this.findDateIndex(data, this.calcConfig.today, false, data.categories.length);
         data.series.forEach(function (series) {
             if (series.name != "Planned") {
                 for (var i = 0; i < series.data.length; i++) {
-                    if (series.data[i] > 0 && i < actualStartIndex) {
-                        actualStartIndex = i;
+                    if (series.data[i] > 0 && i < firstInProgressIndex) {
+                        firstInProgressIndex = i;
                         break;
                     }
                 }
             }
         });
+        var startIndex = this.calcConfig.customStartDate ? this.findDateIndex(data, this.calcConfig.customStartDate, false, firstInProgressIndex) : firstInProgressIndex;
         data.series.forEach(function (series) {
-            series.data = series.data.slice(actualStartIndex);
+            series.data = series.data.slice(startIndex);
         });
-        data.categories = data.categories.slice(actualStartIndex);
+        data.categories = data.categories.slice(startIndex);
     },
 
     stripFutureBars: function (data) {
@@ -150,11 +137,23 @@ Ext.define("My.BurnUpCalculation", {
     addProjectionAndIdealLine: function (data) {
         var acceptedData = this.getSeriesData(data, "Accepted");
         var todayIndex = this.findDateIndex(data, this.calcConfig.today);
+        var endIndex = this.findDateIndex(data, this.calcConfig.endDate);
         var todayAcceptedPoints = acceptedData[todayIndex];
         var todayPlannedPoints = this.getSeriesData(data, "Planned")[todayIndex];
-        var length = acceptedData.length;
 
-        var projectionData = this.linearProjectionData(0, 0, todayIndex, todayAcceptedPoints, length, todayPlannedPoints);
+        var firstAcceptedIndex;
+        var firstAcceptedPoints;
+        for (var i = 0; i < acceptedData.length; i++) {
+            if (acceptedData[i] > 0) {
+                firstAcceptedIndex = i;
+                firstAcceptedPoints = acceptedData[i];
+                break;
+            }
+        }
+        var projectionStartIndex = firstAcceptedIndex || 0;
+        var projectionStartPoints = firstAcceptedPoints || 0;
+
+        var projectionData = this.linearProjectionData(projectionStartIndex, projectionStartPoints, todayIndex, todayAcceptedPoints, endIndex + 1, todayPlannedPoints);
         if (projectionData) {
             data.series.push({
                 name: "Projection",
@@ -166,12 +165,11 @@ Ext.define("My.BurnUpCalculation", {
                 lineWidth: 1
             });
 
-            var projectedDaysRemaining = this.linearProjectionTargetIndex(0, 0, todayIndex, todayAcceptedPoints, todayPlannedPoints);
+            var projectedDaysRemaining = this.linearProjectionTargetIndex(projectionStartIndex, projectionStartPoints, todayIndex, todayAcceptedPoints, todayPlannedPoints);
             this.projectedEndDate = addBusinessDays(new Date(data.categories[0]), projectedDaysRemaining);
         }
         if (this.calcConfig.endDate) {
-            var endIndex = this.findDateIndex(data, this.calcConfig.endDate);
-            var idealData = this.linearProjectionData(0, 0, endIndex, todayPlannedPoints, endIndex + 1);
+            var idealData = this.linearProjectionData(projectionStartIndex, projectionStartPoints, endIndex, todayPlannedPoints, endIndex + 1);
             if (idealData) {
                 data.series.push({
                     name: "Ideal",
@@ -235,7 +233,7 @@ Ext.define("My.BurnUpCalculation", {
         }
     },
 
-    linearProjectionData: function (startIndex, startValue, endIndex, endValue, length, targetValue) {
+    linearProjectionData: function (startIndex, startValue, endIndex, endValue, indexLimit, valueLimit) {
         var projectionStep = this.linearProjectionStep(startIndex, startValue, endIndex, endValue);
         if (projectionStep) {
             var data = [];
@@ -245,8 +243,8 @@ Ext.define("My.BurnUpCalculation", {
             }
             data[i] = startValue;
             i++;
-            var targetIndex = startIndex + length;
-            for (; i < targetIndex && (!targetValue || data[i - 1] <= targetValue); i++) {
+            var actualIndexLimit = indexLimit || Infinity;
+            for (; i < actualIndexLimit && (!valueLimit || data[i - 1] <= valueLimit); i++) {
                 data[i] = data[i - 1] + projectionStep;
             }
             return data;
@@ -265,15 +263,29 @@ Ext.define("My.BurnUpCalculation", {
     }
 });
 
-                Ext.define("MilestoneBurnup", Ext.merge({
+function addBusinessDays(date, businessDays) {
+    var days = date.getDate();
+    var d = date.getDay();
+    while (businessDays > 0) {
+        ++days;
+        d = (d + 1) % 7;
+        if (d !== 0 && d != 6) {
+            --businessDays;
+        }
+    }
+    date.setDate(days);
+    return date;
+}
+
+                Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     extend: "Rally.app.App",
     componentCls: "app",
 
     getSettingsFields: function () {
-        return [{
-            name: "milestone",
-            xtype: "mymilestonecombobox"
-        }];
+        return [
+            {name: "milestone", xtype: "mymilestonecombobox"},
+            {name: "customStartDate", xtype: "rallydatefield", label: "Custom Start Date", config: {labelWidth: 150}}
+        ];
     },
 
     getMilestoneId: function () {
@@ -285,11 +297,14 @@ Ext.define("My.BurnUpCalculation", {
     },
 
     launch: function () {
-        Ext.define("MyMilestoneBomboBox", {
-            xtype: 'rallymilestonecombobox',
+        Ext.define("MyMilestoneComboBox", {
             extend: "Rally.ui.combobox.MilestoneComboBox",
             alias: "widget.mymilestonecombobox",
-            editable: false
+            editable: false,
+            config: {
+                labelText: "Milestone",
+                hideLabel: false
+            }
         });
 
         this.getDataForChart().then({
@@ -309,7 +324,7 @@ Ext.define("My.BurnUpCalculation", {
         });
     },
 
-    //listeners: {
+    //listeners: { // TODO when no milestone set, display settings immediately
     //    ready: function () {
     //        if (!this.getMilestoneId()) {
     //            this.showSettings();
@@ -448,7 +463,7 @@ Ext.define("My.BurnUpCalculation", {
         var storeConfig = {
             listeners: {
                 load: function (store, data, success) {
-                    // dev && console.debug(dev.rallyDataToString(data, ["_ValidFrom", "_ValidTo", "FormattedID", "PlanEstimate", "ScheduleState"]));
+                    // dev && console.debug(dev.storeDataToString(data, ["_ValidFrom", "_ValidTo", "FormattedID", "PlanEstimate", "ScheduleState"]));
                 }
             },
             find: {
@@ -468,7 +483,8 @@ Ext.define("My.BurnUpCalculation", {
             calculatorConfig: {
                 endDate: milestone.get("TargetDate"),
                 calculationConfig: {
-                    endDate: milestone.get("TargetDate")
+                    endDate: milestone.get("TargetDate"),
+                    customStartDate: this.getSetting("customStartDate")
                 }
             },
 
@@ -487,7 +503,7 @@ Ext.define("My.BurnUpCalculation", {
 
 
 
-            Rally.launchApp('MilestoneBurnup', {
+            Rally.launchApp('MilestoneBurnupWithProjection', {
                 name:"Milestone Burnup with Projection",
 	            parentRepos:""
             });

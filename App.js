@@ -1,12 +1,12 @@
-Ext.define("MilestoneBurnup", Ext.merge({
+Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     extend: "Rally.app.App",
     componentCls: "app",
 
     getSettingsFields: function () {
-        return [{
-            name: "milestone",
-            xtype: "mymilestonecombobox"
-        }];
+        return [
+            {name: "milestone", xtype: "mymilestonecombobox"},
+            {name: "customStartDate", xtype: "rallydatefield", label: "Custom Start Date", config: {labelWidth: 150}}
+        ];
     },
 
     getMilestoneId: function () {
@@ -18,11 +18,14 @@ Ext.define("MilestoneBurnup", Ext.merge({
     },
 
     launch: function () {
-        Ext.define("MyMilestoneBomboBox", {
-            xtype: 'rallymilestonecombobox',
+        Ext.define("MyMilestoneComboBox", {
             extend: "Rally.ui.combobox.MilestoneComboBox",
             alias: "widget.mymilestonecombobox",
-            editable: false
+            editable: false,
+            config: {
+                labelText: "Milestone",
+                hideLabel: false
+            }
         });
 
         this.getDataForChart().then({
@@ -181,7 +184,7 @@ Ext.define("MilestoneBurnup", Ext.merge({
         var storeConfig = {
             listeners: {
                 load: function (store, data, success) {
-                    // dev && console.debug(dev.rallyDataToString(data, ["_ValidFrom", "_ValidTo", "FormattedID", "PlanEstimate", "ScheduleState"]));
+                    // dev && console.debug(dev.storeDataToString(data, ["_ValidFrom", "_ValidTo", "FormattedID", "PlanEstimate", "ScheduleState"]));
                 }
             },
             find: {
@@ -201,7 +204,8 @@ Ext.define("MilestoneBurnup", Ext.merge({
             calculatorConfig: {
                 endDate: milestone.get("TargetDate"),
                 calculationConfig: {
-                    endDate: milestone.get("TargetDate")
+                    endDate: milestone.get("TargetDate"),
+                    customStartDate: this.getSetting("customStartDate")
                 }
             },
 
