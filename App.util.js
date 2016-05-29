@@ -20,6 +20,7 @@ function rejectedPromise(error) {
 
 
 /**
+ * Use to display store errors on the console:
  * Ext.create('Rally.data.lookback.SnapshotStore', {
  *      exceptionHandler: loggingSnapshotStoreExceptionHandler
  *      ...
@@ -66,7 +67,7 @@ Ext.define("My.BurnUpCalculation", {
     calculate: function (data, config) {
         this.calcConfig = {
             today: config.today || new Date(),
-            endDate: config.endDate,
+            plannedEndDate: config.plannedEndDate,
             customStartDate: config.customStartDate,
             maxDaysAfterPlannedEnd: config.maxDaysAfterPlannedEnd,
             customProjectionStartDate: config.customProjectionStartDate
@@ -153,7 +154,7 @@ Ext.define("My.BurnUpCalculation", {
         var plannedData = this.getSeriesData(data, "Planned");
         var dates = data.categories;
         var todayIndex = this.findDateIndex(dates, this.calcConfig.today);
-        var plannedEndIndex = this.findDateIndex(dates, this.calcConfig.endDate);
+        var plannedEndIndex = this.findDateIndex(dates, this.calcConfig.plannedEndDate);
         var todayAcceptedPoints = acceptedData[todayIndex];
         var todayPlannedPoints = plannedData[todayIndex];
         var projectionStart = this.getProjectionStart(dates, acceptedData);
@@ -165,9 +166,9 @@ Ext.define("My.BurnUpCalculation", {
         if (projectedDateIndex && todayAcceptedPoints < todayPlannedPoints) {
             var maxDaysAfterPlannedEnd = this.calcConfig.maxDaysAfterPlannedEnd || 0;
             var projectionEndIndex = Math.min(projectedDateIndex, (plannedEndIndex == -1 ? todayIndex : plannedEndIndex) + maxDaysAfterPlannedEnd);
-            for (var j = Math.max(todayIndex, plannedEndIndex); j < projectionEndIndex; j++) {
+            for (var j = Math.max(todayIndex, plannedEndIndex, dates.length - 1); j < projectionEndIndex; j++) {
                 plannedData.push(todayPlannedPoints);
-                data.categories.push(addBusinessDays(new Date(data.categories[data.categories.length - 1]), 1));
+                dates.push(addBusinessDays(new Date(dates[dates.length - 1]), 1));
             }
             var projectionSeries = this.linearProjectionData(projectionStart.index, projectionStart.points, todayIndex, todayAcceptedPoints, projectionEndIndex, todayPlannedPoints);
             this.addSeriesLine(data, "Projection", projectionSeries, {dashStyle: "Dash"});
@@ -175,12 +176,12 @@ Ext.define("My.BurnUpCalculation", {
             if (projectedDateIndex <= projectionEndIndex) {
                 this.addVerticalLine("projected end", projectedDateIndex, {color: "#BBB"});
             }
-            this.projectedEndDate = addBusinessDays(new Date(data.categories[0]), projectedDateIndex);
+            this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
         }
-        if (this.calcConfig.endDate) {
+        if (this.calcConfig.plannedEndDate) {
             var idealData = this.linearProjectionData(projectionStart.index, projectionStart.points, plannedEndIndex, todayPlannedPoints, plannedEndIndex);
             this.addSeriesLine(data, "Ideal", idealData, {dashStyle: "Dot"});
-            this.addSubtitleText("Planned End: " + formatDate(this.calcConfig.endDate));
+            this.addSubtitleText("Planned End: " + formatDate(this.calcConfig.plannedEndDate));
         }
         if (this.projectedEndDate) {
             this.addSubtitleText("Projected End: " + formatDate(this.projectedEndDate));

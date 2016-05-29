@@ -124,7 +124,7 @@ window.dev = {
                     maxDaysAfterPlannedEnd: 20,
                     customProjectionStartDate: new Date("2016-05-02"),
                     customStartDate: new Date("2016-04-07"),
-                    endDate: new Date("2016-05-20"),
+                    plannedEndDate: new Date("2016-05-20"),
                     today: new Date("2016-05-13")
                 }
             );

@@ -51,7 +51,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8, 8]),
             Planned([10, 15, 20, 20, 20])
         ]), {
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -71,7 +71,7 @@ describe('Calculation for chart', function () {
             Planned([10, 15, 20, 20, 20])
         ]), {
             customProjectionStartDate: new Date("2016-05-11"),
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -91,7 +91,7 @@ describe('Calculation for chart', function () {
             Planned([10, 15, 20, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 10,
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
@@ -111,7 +111,7 @@ describe('Calculation for chart', function () {
             Planned([10, 15, 20, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 1,
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
@@ -131,7 +131,7 @@ describe('Calculation for chart', function () {
             Planned([10, 15, 20, 20, 20])
         ]), {
             customStartDate: new Date("2016-05-12"),
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['12May16', '13May16', '16May16'],
@@ -151,7 +151,7 @@ describe('Calculation for chart', function () {
             Planned([10, 15, 20, 20, 20])
         ]), {
             customStartDate: new Date("2016-05-01"),
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['10May16', '11May16', '12May16', '13May16', '16May16'],
@@ -172,7 +172,7 @@ describe('Calculation for chart', function () {
         ]), {
             customStartDate: new Date("2016-05-11"),
             customProjectionStartDate: new Date("2016-05-12"),
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -191,7 +191,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8, 5]),
             Planned([10, 15, 20, 20, 20])
         ]), {
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-14")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -233,6 +233,25 @@ describe('Calculation for chart', function () {
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
                 series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Planned([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20])]
+            }, {
+                xAxis: {plotLines: [todayLine(2), projectedEndLine(4)]},
+                subtitle: subtitle(["Projected End: 17May16"])
+            }
+        );
+    });
+
+    it('no planned end and non-zero max days after planned end set and today is not the latest in series: chart looks like today was the latest in series', function () {
+        expectCalculation(chartData("2016-05-10", 5, [
+            InProgress([0, 4, 3, 2, 2]),
+            Completed([0, 0, 5, 4, 4]),
+            Accepted([0, 0, 2, 8, 8]),
+            Planned([10, 15, 20, 20, 20])
+        ]), {
+            maxDaysAfterPlannedEnd: 10,
+            today: new Date("2016-05-13")
+        }).toReturn({
+                categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Planned([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20])]
             }, {
                 xAxis: {plotLines: [todayLine(2), projectedEndLine(4)]},
                 subtitle: subtitle(["Projected End: 17May16"])
@@ -284,7 +303,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 2, 5]),
             Planned([10, 15, 20, 20, 20])
         ]), {
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -304,7 +323,7 @@ describe('Calculation for chart', function () {
             Planned([10, 15, 20, 20, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 10,
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-17")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16', '18May16'],
@@ -323,7 +342,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 12, 18, 20]),
             Planned([10, 15, 20, 20, 20, 20])
         ]), {
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-17")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
@@ -342,7 +361,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 2, 12, 19, 19]),
             Planned([10, 15, 20, 20, 20])
         ]), {
-            endDate: new Date("2016-05-16"),
+            plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-12")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],

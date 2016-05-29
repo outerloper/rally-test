@@ -29,6 +29,7 @@ function rejectedPromise(error) {
 
 
 /**
+ * Use to display store errors on the console:
  * Ext.create('Rally.data.lookback.SnapshotStore', {
  *      exceptionHandler: loggingSnapshotStoreExceptionHandler
  *      ...
@@ -75,7 +76,7 @@ Ext.define("My.BurnUpCalculation", {
     calculate: function (data, config) {
         this.calcConfig = {
             today: config.today || new Date(),
-            endDate: config.endDate,
+            plannedEndDate: config.plannedEndDate,
             customStartDate: config.customStartDate,
             maxDaysAfterPlannedEnd: config.maxDaysAfterPlannedEnd,
             customProjectionStartDate: config.customProjectionStartDate
@@ -162,7 +163,7 @@ Ext.define("My.BurnUpCalculation", {
         var plannedData = this.getSeriesData(data, "Planned");
         var dates = data.categories;
         var todayIndex = this.findDateIndex(dates, this.calcConfig.today);
-        var plannedEndIndex = this.findDateIndex(dates, this.calcConfig.endDate);
+        var plannedEndIndex = this.findDateIndex(dates, this.calcConfig.plannedEndDate);
         var todayAcceptedPoints = acceptedData[todayIndex];
         var todayPlannedPoints = plannedData[todayIndex];
         var projectionStart = this.getProjectionStart(dates, acceptedData);
@@ -174,9 +175,9 @@ Ext.define("My.BurnUpCalculation", {
         if (projectedDateIndex && todayAcceptedPoints < todayPlannedPoints) {
             var maxDaysAfterPlannedEnd = this.calcConfig.maxDaysAfterPlannedEnd || 0;
             var projectionEndIndex = Math.min(projectedDateIndex, (plannedEndIndex == -1 ? todayIndex : plannedEndIndex) + maxDaysAfterPlannedEnd);
-            for (var j = Math.max(todayIndex, plannedEndIndex); j < projectionEndIndex; j++) {
+            for (var j = Math.max(todayIndex, plannedEndIndex, dates.length - 1); j < projectionEndIndex; j++) {
                 plannedData.push(todayPlannedPoints);
-                data.categories.push(addBusinessDays(new Date(data.categories[data.categories.length - 1]), 1));
+                dates.push(addBusinessDays(new Date(dates[dates.length - 1]), 1));
             }
             var projectionSeries = this.linearProjectionData(projectionStart.index, projectionStart.points, todayIndex, todayAcceptedPoints, projectionEndIndex, todayPlannedPoints);
             this.addSeriesLine(data, "Projection", projectionSeries, {dashStyle: "Dash"});
@@ -184,12 +185,12 @@ Ext.define("My.BurnUpCalculation", {
             if (projectedDateIndex <= projectionEndIndex) {
                 this.addVerticalLine("projected end", projectedDateIndex, {color: "#BBB"});
             }
-            this.projectedEndDate = addBusinessDays(new Date(data.categories[0]), projectedDateIndex);
+            this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
         }
-        if (this.calcConfig.endDate) {
+        if (this.calcConfig.plannedEndDate) {
             var idealData = this.linearProjectionData(projectionStart.index, projectionStart.points, plannedEndIndex, todayPlannedPoints, plannedEndIndex);
             this.addSeriesLine(data, "Ideal", idealData, {dashStyle: "Dot"});
-            this.addSubtitleText("Planned End: " + formatDate(this.calcConfig.endDate));
+            this.addSubtitleText("Planned End: " + formatDate(this.calcConfig.plannedEndDate));
         }
         if (this.projectedEndDate) {
             this.addSubtitleText("Projected End: " + formatDate(this.projectedEndDate));
@@ -313,13 +314,12 @@ function addBusinessDays(date, businessDays) {
     componentCls: "app",
 
     getSettingsFields: function () {
-        var LABEL_WIDTH = 170;
-        var LABEL_ALIGN = "right";
+        var config = {labelWidth: 170, labelAlign: "right"};
         return [
             {name: "milestone", xtype: "mymilestonecombobox"},
-            {name: "customStartDate", xtype: "rallydatefield", label: "Custom Chart Start Date", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN}},
-            {name: "customProjectionStartDate", xtype: "rallydatefield", label: "Custom Projection Start Date", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN}},
-            {name: "maxDaysAfterPlannedEnd", xtype: "rallynumberfield", label: "Max Days Shown After Planned End", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN, minValue: 0, maxValue: 250}}
+            {name: "customStartDate", xtype: "rallydatefield", label: "Custom Chart Start Date", config: config},
+            {name: "customProjectionStartDate", xtype: "rallydatefield", label: "Custom Projection Start Date", config: config},
+            {name: "maxDaysAfterPlannedEnd", xtype: "rallynumberfield", label: "Max Days Shown After Planned End", config: Ext.merge(Ext.clone(config), {minValue: 0, maxValue: 250})}
         ];
     },
 
@@ -518,7 +518,7 @@ function addBusinessDays(date, businessDays) {
             calculatorConfig: {
                 endDate: milestone.get("TargetDate"),
                 calculationConfig: {
-                    endDate: milestone.get("TargetDate"),
+                    plannedEndDate: milestone.get("TargetDate"),
                     customStartDate: this.getSetting("customStartDate"),
                     customProjectionStartDate: this.getSetting("customProjectionStartDate"),
                     maxDaysAfterPlannedEnd: this.getSetting("maxDaysAfterPlannedEnd")

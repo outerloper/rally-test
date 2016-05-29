@@ -3,13 +3,12 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     componentCls: "app",
 
     getSettingsFields: function () {
-        var LABEL_WIDTH = 170;
-        var LABEL_ALIGN = "right";
+        var config = {labelWidth: 170, labelAlign: "right"};
         return [
             {name: "milestone", xtype: "mymilestonecombobox"},
-            {name: "customStartDate", xtype: "rallydatefield", label: "Custom Chart Start Date", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN}},
-            {name: "customProjectionStartDate", xtype: "rallydatefield", label: "Custom Projection Start Date", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN}},
-            {name: "maxDaysAfterPlannedEnd", xtype: "rallynumberfield", label: "Max Days Shown After Planned End", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN, minValue: 0, maxValue: 250}}
+            {name: "customStartDate", xtype: "rallydatefield", label: "Custom Chart Start Date", config: config},
+            {name: "customProjectionStartDate", xtype: "rallydatefield", label: "Custom Projection Start Date", config: config},
+            {name: "maxDaysAfterPlannedEnd", xtype: "rallynumberfield", label: "Max Days Shown After Planned End", config: Ext.merge(Ext.clone(config), {minValue: 0, maxValue: 250})}
         ];
     },
 
@@ -208,7 +207,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             calculatorConfig: {
                 endDate: milestone.get("TargetDate"),
                 calculationConfig: {
-                    endDate: milestone.get("TargetDate"),
+                    plannedEndDate: milestone.get("TargetDate"),
                     customStartDate: this.getSetting("customStartDate"),
                     customProjectionStartDate: this.getSetting("customProjectionStartDate"),
                     maxDaysAfterPlannedEnd: this.getSetting("maxDaysAfterPlannedEnd")
