@@ -28,23 +28,27 @@ function Ideal(data) {
 }
 
 function subtitle(parts) {
-    return {text: parts.join(" &nbsp;&nbsp;&nbsp; "), useHTML: true};
+    return parts ? {text: parts.join(" &nbsp;&nbsp;&nbsp; "), useHTML: true} : {useHTML: true};
 }
 
 function plannedEndLine(index) {
     return {value: index, color: '#000', width: 2, label: {text: 'planned end'}};
 }
 
+function projectedEndLine(index) {
+    return {value: index, color: '#BBB', width: 2, label: {text: 'projected end'}};
+}
+
 function todayLine(index) {
-    return {value: index, color: '#AAA', width: 2, label: {text: 'today'}, dashStyle: 'ShortDash'};
+    return {value: index, color: '#BBB', width: 2, label: {text: 'today'}, dashStyle: 'ShortDash'};
 }
 
 describe('Calculation for chart', function () {
     it('typical case: series when work not yet started removed, points in future zeroed, projections calculated from first accepted', function () {
         expectCalculation(chartData("2016-05-10", 5, [
             InProgress([0, 4, 3, 2, 2]),
-            Completed([0, 0, 5, 4, 7]),
-            Accepted([0, 0, 2, 8, 5]),
+            Completed([0, 0, 5, 4, 4]),
+            Accepted([0, 0, 2, 8, 8]),
             Planned([10, 15, 20, 20, 20])
         ]), {
             endDate: new Date("2016-05-16"),
@@ -59,7 +63,67 @@ describe('Calculation for chart', function () {
         );
     });
 
-    it('with custom start date later than default: series before that date truncated', function () {
+    it('when custom projection start date on day without work accepted: projection and ideal is drawn from that date, from 0 points', function () {
+        expectCalculation(chartData("2016-05-10", 5, [
+            InProgress([0, 4, 3, 2, 2]),
+            Completed([0, 0, 5, 4, 4]),
+            Accepted([0, 0, 2, 8, 8]),
+            Planned([10, 15, 20, 20, 20])
+        ]), {
+            customProjectionStartDate: new Date("2016-05-11"),
+            endDate: new Date("2016-05-16"),
+            today: new Date("2016-05-13")
+        }).toReturn({
+                categories: ['11May16', '12May16', '13May16', '16May16'],
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Planned([15, 20, 20, 20]), Projection([0, 4, 8, 12]), Ideal([0, 20 / 3, 20 / 3 * 2, 20])]
+            }, {
+                xAxis: {plotLines: [plannedEndLine(3), todayLine(2)]},
+                subtitle: subtitle(["Planned End: 16May16", "Projected End: 18May16"])
+            }
+        );
+    });
+
+    it('when non-zero max days after planned end set: chart is extended to show a projection after planned end', function () {
+        expectCalculation(chartData("2016-05-10", 5, [
+            InProgress([0, 4, 3, 2, 2]),
+            Completed([0, 0, 5, 4, 4]),
+            Accepted([0, 0, 2, 8, 8]),
+            Planned([10, 15, 20, 20, 20])
+        ]), {
+            maxDaysAfterPlannedEnd: 10,
+            endDate: new Date("2016-05-16"),
+            today: new Date("2016-05-13")
+        }).toReturn({
+                categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Planned([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20]), Ideal([null, 2, 11, 20])]
+            }, {
+                xAxis: {plotLines: [plannedEndLine(3), todayLine(2), projectedEndLine(4)]},
+                subtitle: subtitle(["Planned End: 16May16", "Projected End: 17May16"])
+            }
+        );
+    });
+
+    it('when not enough days after planed end set to show whole projection: projection is limited to this number of days and no projected end line', function () {
+        expectCalculation(chartData("2016-05-10", 5, [
+            InProgress([0, 4, 3, 2, 2]),
+            Completed([0, 0, 5, 4, 4]),
+            Accepted([0, 0, 4, 8, 8]),
+            Planned([10, 15, 20, 20, 20])
+        ]), {
+            maxDaysAfterPlannedEnd: 1,
+            endDate: new Date("2016-05-16"),
+            today: new Date("2016-05-13")
+        }).toReturn({
+                categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 4, 8, null]), Planned([15, 20, 20, 20, 20]), Projection([null, 4, 8, 12, 16]), Ideal([null, 4, 12, 20])]
+            }, {
+                xAxis: {plotLines: [plannedEndLine(3), todayLine(2)]},
+                subtitle: subtitle(["Planned End: 16May16", "Projected End: 18May16"])
+            }
+        );
+    });
+
+    it('with custom chart start date later than default: series before that date truncated, also projected end line not drawn as is the same as planned end', function () {
         expectCalculation(chartData("2016-05-10", 5, [
             InProgress([2, 2, 2, 2, 2]),
             Completed([0, 2, 2, 2, 2]),
@@ -74,6 +138,27 @@ describe('Calculation for chart', function () {
                 series: [InProgress([2, 2, null]), Completed([2, 2, null]), Accepted([10, 15, null]), Planned([20, 20, 20]), Projection([10, 15, 20]), Ideal([10, 15, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(2), todayLine(1)]},
+                subtitle: subtitle(["Planned End: 16May16", "Projected End: 16May16"])
+            }
+        );
+    });
+
+    it('with custom chart start date and custom projection date: appropriate days truncated and projection calculated for custom date', function () {
+        expectCalculation(chartData("2016-05-10", 5, [
+            InProgress([2, 2, 2, 2, 2]),
+            Completed([0, 2, 2, 2, 2]),
+            Accepted([0, 10, 10, 15, 15]),
+            Planned([10, 15, 20, 20, 20])
+        ]), {
+            customStartDate: new Date("2016-05-11"),
+            customProjectionStartDate: new Date("2016-05-12"),
+            endDate: new Date("2016-05-16"),
+            today: new Date("2016-05-13")
+        }).toReturn({
+                categories: ['11May16', '12May16', '13May16', '16May16'],
+                series: [InProgress([2, 2, 2, null]), Completed([2, 2, 2, null]), Accepted([10, 10, 15, null]), Planned([15, 20, 20, 20]), Projection([null, 10, 15, 20]), Ideal([null, 10, 15, 20])]
+            }, {
+                xAxis: {plotLines: [plannedEndLine(3), todayLine(2)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 16May16"])
             }
         );
@@ -98,7 +183,7 @@ describe('Calculation for chart', function () {
         );
     });
 
-    it('no planned end: no end date line, no end date info in subtitle, chart extended to show whole projection', function () {
+    it('no planned end and zero max days after planned end set: no end date line, no end date info in subtitle, chart ends at today', function () {
         expectCalculation(chartData("2016-05-10", 4, [
             InProgress([0, 4, 3, 2]),
             Completed([0, 0, 5, 4]),
@@ -107,10 +192,48 @@ describe('Calculation for chart', function () {
         ]), {
             today: new Date("2016-05-13")
         }).toReturn({
+                categories: ['11May16', '12May16', '13May16'],
+                series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Planned([15, 20, 20]), Projection([null, 2, 8])]
+            }, {
+                xAxis: {plotLines: [todayLine(2)]},
+                subtitle: subtitle(["Projected End: 17May16"])
+            }
+        );
+    });
+
+    it('no planned end and non-zero max days after planned end set: chart extended to show whole projection', function () {
+        expectCalculation(chartData("2016-05-10", 4, [
+            InProgress([0, 4, 3, 2]),
+            Completed([0, 0, 5, 4]),
+            Accepted([0, 0, 2, 8]),
+            Planned([10, 15, 20, 20])
+        ]), {
+            maxDaysAfterPlannedEnd: 10,
+            today: new Date("2016-05-13")
+        }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
                 series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Planned([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20])]
             }, {
-                xAxis: {plotLines: [plannedEndLine(-1), todayLine(2)]},
+                xAxis: {plotLines: [todayLine(2), projectedEndLine(4)]},
+                subtitle: subtitle(["Projected End: 17May16"])
+            }
+        );
+    });
+
+    it('no planned end and not enough max days after planned end set to show whole projection: chart extended to show only the days set', function () {
+        expectCalculation(chartData("2016-05-10", 4, [
+            InProgress([0, 4, 3, 2]),
+            Completed([0, 0, 5, 4]),
+            Accepted([0, 0, 2, 8]),
+            Planned([10, 15, 20, 20])
+        ]), {
+            maxDaysAfterPlannedEnd: 1,
+            today: new Date("2016-05-13")
+        }).toReturn({
+                categories: ['11May16', '12May16', '13May16', '16May16'],
+                series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Planned([15, 20, 20, 20]), Projection([null, 2, 8, 14])]
+            }, {
+                xAxis: {plotLines: [todayLine(2)]},
                 subtitle: subtitle(["Projected End: 17May16"])
             }
         );
@@ -128,8 +251,8 @@ describe('Calculation for chart', function () {
                 categories: ['11May16', '12May16'],
                 series: [InProgress([4, 3]), Completed([0, 5]), Accepted([0, 2]), Planned([15, 20])]
             }, {
-                xAxis: {plotLines: [plannedEndLine(-1), todayLine(1)]},
-                subtitle: subtitle([])
+                xAxis: {plotLines: [todayLine(1)]},
+                subtitle: subtitle()
             }
         );
     });
@@ -160,13 +283,14 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8, 12, 17]),
             Planned([10, 15, 20, 20, 20, 20])
         ]), {
+            maxDaysAfterPlannedEnd: 10,
             endDate: new Date("2016-05-16"),
             today: new Date("2016-05-17")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16', '18May16'],
                 series: [InProgress([4, 3, 2, 2, 1]), Completed([0, 5, 4, 3, 2]), Accepted([0, 2, 8, 12, 17]), Planned([15, 20, 20, 20, 20, 20]), Projection([null, 2, 7, 12, 17, 22]), Ideal([null, 2, 11, 20])]
             }, {
-                xAxis: {plotLines: [plannedEndLine(3), todayLine(4)]},
+                xAxis: {plotLines: [plannedEndLine(3), todayLine(4), projectedEndLine(5)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 18May16"])
             }
         );
@@ -204,7 +328,7 @@ describe('Calculation for chart', function () {
                 categories: ['11May16', '12May16', '13May16', '16May16'],
                 series: [InProgress([4, 3, null, null]), Completed([0, 5, null, null]), Accepted([2, 12, null, null]), Planned([15, 20, 20, 20]), Projection([2, 12, 22]), Ideal([2, 8, 14, 20])]
             }, {
-                xAxis: {plotLines: [plannedEndLine(3), todayLine(1)]},
+                xAxis: {plotLines: [plannedEndLine(3), todayLine(1), projectedEndLine(2)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 13May16"])
             }
         );

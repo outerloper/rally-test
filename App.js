@@ -3,10 +3,20 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     componentCls: "app",
 
     getSettingsFields: function () {
+        var LABEL_WIDTH = 170;
+        var LABEL_ALIGN = "right";
         return [
             {name: "milestone", xtype: "mymilestonecombobox"},
-            {name: "customStartDate", xtype: "rallydatefield", label: "Custom Start Date", config: {labelWidth: 150}}
+            {name: "customStartDate", xtype: "rallydatefield", label: "Custom Chart Start Date", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN}},
+            {name: "customProjectionStartDate", xtype: "rallydatefield", label: "Custom Projection Start Date", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN}},
+            {name: "maxDaysAfterPlannedEnd", xtype: "rallynumberfield", label: "Max Days Shown After Planned End", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN, minValue: 0, maxValue: 365}}
         ];
+    },
+
+    config: {
+        defaultSettings: {
+            maxDaysAfterPlannedEnd: 30
+        }
     },
 
     getMilestoneId: function () {
@@ -44,14 +54,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             scope: this
         });
     },
-
-    //listeners: { // TODO when no milestone set, display settings immediately
-    //    ready: function () {
-    //        if (!this.getMilestoneId()) {
-    //            this.showSettings();
-    //        }
-    //    }
-    //},
 
     burnupCalculator: Ext.define("My.MilestoneBurnUpCalculator", {
         extend: "Rally.data.lookback.calculator.TimeSeriesCalculator",
@@ -205,7 +207,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 endDate: milestone.get("TargetDate"),
                 calculationConfig: {
                     endDate: milestone.get("TargetDate"),
-                    customStartDate: this.getSetting("customStartDate")
+                    customStartDate: this.getSetting("customStartDate"),
+                    customProjectionStartDate: this.getSetting("customProjectionStartDate"),
+                    maxDaysAfterPlannedEnd: this.getSetting("maxDaysAfterPlannedEnd")
                 }
             },
 

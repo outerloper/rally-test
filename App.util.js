@@ -64,25 +64,32 @@ Ext.define("My.BurnUpCalculation", {
      * @ {Object} chartConfig
      */
     calculate: function (data, config) {
-        this.calcConfig.today = config.today || new Date();
-        this.calcConfig.endDate = config.endDate;
-        this.calcConfig.customStartDate = config.customStartDate;
+        this.calcConfig = {
+            today: config.today || new Date(),
+            endDate: config.endDate,
+            customStartDate: config.customStartDate,
+            maxDaysAfterPlannedEnd: config.maxDaysAfterPlannedEnd,
+            customProjectionStartDate: config.customProjectionStartDate
+        };
+        this.chartConfig = {
+            xAxis: {
+                plotLines: []
+            },
+            subtitle: {
+                useHTML: true
+            }
+        };
 
         this.adjustChartStart(data);
         this.stripFutureBars(data);
-        this.addPlotLines(data);
-        this.addProjectionAndIdealLine(data);
-        this.addSubtitle();
+        this.addProjectionsLinesAndSubtitle(data);
         this.reformatDates(data);
 
         return this.chartConfig;
     },
 
-    calcConfig: {},
-    chartConfig: {},
-
     adjustChartStart: function (data) {
-        var firstInProgressIndex = this.findDateIndex(data, this.calcConfig.today, false, data.categories.length);
+        var firstInProgressIndex = this.findDateIndex(data.categories, this.calcConfig.today, false, data.categories.length);
         data.series.forEach(function (series) {
             if (series.name != "Planned") {
                 for (var i = 0; i < series.data.length; i++) {
@@ -93,7 +100,7 @@ Ext.define("My.BurnUpCalculation", {
                 }
             }
         });
-        var startIndex = this.calcConfig.customStartDate ? this.findDateIndex(data, this.calcConfig.customStartDate, false, firstInProgressIndex) : firstInProgressIndex;
+        var startIndex = this.calcConfig.customStartDate ? this.findDateIndex(data.categories, this.calcConfig.customStartDate, false, firstInProgressIndex) : firstInProgressIndex;
         data.series.forEach(function (series) {
             series.data = series.data.slice(startIndex);
         });
@@ -101,7 +108,7 @@ Ext.define("My.BurnUpCalculation", {
     },
 
     stripFutureBars: function (data) {
-        var currentIndex = this.findDateIndex(data, this.calcConfig.today, false, data.categories.length) + 1;
+        var currentIndex = this.findDateIndex(data.categories, this.calcConfig.today, false, data.categories.length) + 1;
         data.series.forEach(function (series) {
             if (series.name != "Planned") {
                 for (var i = currentIndex; i < series.data.length; i++) {
@@ -111,95 +118,93 @@ Ext.define("My.BurnUpCalculation", {
         });
     },
 
-    addPlotLines: function (data) {
-        this.chartConfig.xAxis = this.chartConfig.xAxis || {};
-        this.chartConfig.xAxis.plotLines = [
-            {
-                value: this.findDateIndex(data, this.calcConfig.endDate),
-                color: "#000", width: 2, label: {text: "planned end"}
-            },
-            {
-                value: this.findDateIndex(data, this.calcConfig.today, true),
-                color: "#AAA", width: 2, label: {text: "today"}, dashStyle: "ShortDash"
-            }
-        ];
-    },
-
-    addProjectionAndIdealLine: function (data) {
-        var acceptedData = this.getSeriesData(data, "Accepted");
-        var plannedData = this.getSeriesData(data, "Planned");
-        var todayIndex = this.findDateIndex(data, this.calcConfig.today);
-        var endIndex = this.findDateIndex(data, this.calcConfig.endDate);
-        var todayAcceptedPoints = acceptedData[todayIndex];
-        var todayPlannedPoints = plannedData[todayIndex];
-        var firstAcceptedIndex;
-        var firstAcceptedPoints;
-        for (var i = 0; i < acceptedData.length; i++) {
-            if (acceptedData[i] > 0) {
-                firstAcceptedIndex = i;
-                firstAcceptedPoints = acceptedData[i];
-                break;
+    addVerticalLine: function (label, index, config) {
+        if (index == -1) {
+            return;
+        }
+        var plotLines = this.chartConfig.xAxis.plotLines;
+        for (var i = 0; i < plotLines.length; i++) {
+            if (plotLines[i].value == index) {
+                return;
             }
         }
-        var projectionStartIndex = firstAcceptedIndex || 0;
-        var projectionStartPoints = firstAcceptedPoints || 0;
+        plotLines.push(Ext.merge(
+            {label: {text: label}, value: index, width: 2, color: "#000"},
+            config
+        ));
+    },
 
-        var projectedDateIndex = this.linearProjectionTargetIndex(projectionStartIndex, projectionStartPoints, todayIndex, todayAcceptedPoints, todayPlannedPoints);
+    addSeriesLine: function (data, name, series, config) {
+        if (series) {
+            data.series.push(Ext.merge(
+                {name: name, data: series, type: "line", marker: {enabled: false}, enableMouseTracking: false, lineWidth: 1},
+                config
+            ));
+        }
+    },
+
+    addSubtitleText: function (text) {
+        var subtitle = this.chartConfig.subtitle;
+        subtitle.text = subtitle.text ? subtitle.text + " &nbsp;&nbsp;&nbsp; " + text : text;
+    },
+
+    addProjectionsLinesAndSubtitle: function (data) {
+        var acceptedData = this.getSeriesData(data, "Accepted");
+        var plannedData = this.getSeriesData(data, "Planned");
+        var dates = data.categories;
+        var todayIndex = this.findDateIndex(dates, this.calcConfig.today);
+        var plannedEndIndex = this.findDateIndex(dates, this.calcConfig.endDate);
+        var todayAcceptedPoints = acceptedData[todayIndex];
+        var todayPlannedPoints = plannedData[todayIndex];
+        var projectionStart = this.getProjectionStart(dates, acceptedData);
+
+        this.addVerticalLine("planned end", plannedEndIndex);
+        this.addVerticalLine("today", this.findDateIndex(dates, this.calcConfig.today, true), {color: "#BBB", dashStyle: "ShortDash"});
+
+        var projectedDateIndex = this.linearProjectionTargetIndex(projectionStart.index, projectionStart.points, todayIndex, todayAcceptedPoints, todayPlannedPoints);
         if (projectedDateIndex && todayAcceptedPoints < todayPlannedPoints) {
-            var projectionEndIndex;
-            if (endIndex == -1 || todayIndex >= endIndex) {
-                projectionEndIndex = projectedDateIndex;
-                for (var j = todayIndex; j < projectedDateIndex; j++) {
-                    plannedData.push(todayPlannedPoints);
-                    data.categories.push(addBusinessDays(new Date(data.categories[data.categories.length - 1]), 1));
-                }
-            } else {
-                projectionEndIndex = endIndex;
+            var maxDaysAfterPlannedEnd = this.calcConfig.maxDaysAfterPlannedEnd || 0;
+            var projectionEndIndex = Math.min(projectedDateIndex, (plannedEndIndex == -1 ? todayIndex : plannedEndIndex) + maxDaysAfterPlannedEnd);
+            for (var j = Math.max(todayIndex, plannedEndIndex); j < projectionEndIndex; j++) {
+                plannedData.push(todayPlannedPoints);
+                data.categories.push(addBusinessDays(new Date(data.categories[data.categories.length - 1]), 1));
             }
-            var projectionData = this.linearProjectionData(projectionStartIndex, projectionStartPoints, todayIndex, todayAcceptedPoints, projectionEndIndex, todayPlannedPoints);
-            data.series.push({
-                name: "Projection",
-                data: projectionData,
-                type: "line",
-                dashStyle: "Dash",
-                marker: {enabled: false},
-                enableMouseTracking: false,
-                lineWidth: 1
-            });
+            var projectionSeries = this.linearProjectionData(projectionStart.index, projectionStart.points, todayIndex, todayAcceptedPoints, projectionEndIndex, todayPlannedPoints);
+            this.addSeriesLine(data, "Projection", projectionSeries, {dashStyle: "Dash"});
 
+            if (projectedDateIndex <= projectionEndIndex) {
+                this.addVerticalLine("projected end", projectedDateIndex, {color: "#BBB"});
+            }
             this.projectedEndDate = addBusinessDays(new Date(data.categories[0]), projectedDateIndex);
         }
         if (this.calcConfig.endDate) {
-            var idealData = this.linearProjectionData(projectionStartIndex, projectionStartPoints, endIndex, todayPlannedPoints, endIndex);
-            if (idealData) {
-                data.series.push({
-                    name: "Ideal",
-                    data: idealData,
-                    type: "line",
-                    dashStyle: "Dot",
-                    marker: {enabled: false},
-                    enableMouseTracking: false,
-                    lineWidth: 1
-                });
-            }
-        }
-    },
-
-    addSubtitle: function () {
-        var parts = [];
-        if (this.calcConfig.endDate) {
-            parts.push("Planned End: " + formatDate(this.calcConfig.endDate));
+            var idealData = this.linearProjectionData(projectionStart.index, projectionStart.points, plannedEndIndex, todayPlannedPoints, plannedEndIndex);
+            this.addSeriesLine(data, "Ideal", idealData, {dashStyle: "Dot"});
+            this.addSubtitleText("Planned End: " + formatDate(this.calcConfig.endDate));
         }
         if (this.projectedEndDate) {
-            parts.push("Projected End: " + formatDate(this.projectedEndDate));
+            this.addSubtitleText("Projected End: " + formatDate(this.projectedEndDate));
         }
-        this.chartConfig.subtitle = {text: parts.join(" &nbsp;&nbsp;&nbsp; "), useHTML: true};
     },
 
-    findDateIndex: function (data, date, floating, defaultIndex) {
+    getProjectionStart: function (dates, acceptedData) {
+        var index;
+        if (this.calcConfig.customProjectionStartDate) {
+            index = this.findDateIndex(dates, this.calcConfig.customProjectionStartDate);
+        } else {
+            for (index = 0; index < acceptedData.length; index++) {
+                if (acceptedData[index] > 0) {
+                    break;
+                }
+            }
+        }
+        return {index: index, points: acceptedData[index] || 0};
+    },
+
+    findDateIndex: function (dates, date, floating, defaultIndex) {
         var searchedDateString = (date instanceof Date) ? dateToIsoString(date) : date;
-        for (var i = 0; i < data.categories.length; i++) {
-            var dateString = data.categories[i];
+        for (var i = 0; i < dates.length; i++) {
+            var dateString = dates[i];
             if (dateString >= searchedDateString) {
                 return dateString > searchedDateString ? i - (floating ? 0.5 : 1) : i;
             }
@@ -236,7 +241,7 @@ Ext.define("My.BurnUpCalculation", {
 
     linearProjectionData: function (startIndex, startValue, endIndex, endValue, indexLimit, valueLimit) {
         var projectionStep = this.linearProjectionStep(startIndex, startValue, endIndex, endValue);
-        if (projectionStep) {
+        if (projectionStep && indexLimit !== 0) {
             var data = [];
             var i;
             for (i = 0; i < startIndex; i++) {

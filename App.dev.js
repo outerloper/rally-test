@@ -85,16 +85,17 @@ window.dev = {
                 Accepted([0, 10, 10, 15, 15]),
                 Planned([10, 15, 20, 20, 20])
             ]), {
-                customStartDate: new Date("2016-05-12"),
+                customStartDate: new Date("2016-05-11"),
+                customProjectionStartDate: new Date("2016-05-12"),
                 endDate: new Date("2016-05-16"),
                 today: new Date("2016-05-13")
             });
         },
-        _getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
+        getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
             return expectCalculation({
                     "series": [{
                         "name": "In Progress",
-                        "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 13, 13, 26, 27, 26, 18, 5, 13, 21, 16, 16, 16, 21, 21, 21, 21, 21, 21, 21, 16, 16, 6, 6, 6, 6, 6, 6, 6],
+                        "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 13, 13, 26, 27, 26, 18, 5, 13, 21, 16, 16, 16, 21, 21, 21, 21, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16],
                         "type": "column",
                         "dashStyle": "Solid"
                     }, {
@@ -120,8 +121,10 @@ window.dev = {
                         "2016-05-09", "2016-05-10", "2016-05-11", "2016-05-12", "2016-05-13", "2016-05-16", "2016-05-17", "2016-05-18", "2016-05-19", "2016-05-20"
                     ]
                 }, {
+                    maxDaysAfterPlannedEnd: 20,
+                    customProjectionStartDate: new Date("2016-05-02"),
                     endDate: new Date("2016-05-20"),
-                    today: new Date("2016-05-12")
+                    today: new Date("2016-05-07")
                 }
             );
         }
