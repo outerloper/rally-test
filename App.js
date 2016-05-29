@@ -9,7 +9,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             {name: "milestone", xtype: "mymilestonecombobox"},
             {name: "customStartDate", xtype: "rallydatefield", label: "Custom Chart Start Date", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN}},
             {name: "customProjectionStartDate", xtype: "rallydatefield", label: "Custom Projection Start Date", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN}},
-            {name: "maxDaysAfterPlannedEnd", xtype: "rallynumberfield", label: "Max Days Shown After Planned End", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN, minValue: 0, maxValue: 365}}
+            {name: "maxDaysAfterPlannedEnd", xtype: "rallynumberfield", label: "Max Days Shown After Planned End", config: {labelWidth: LABEL_WIDTH, labelAlign: LABEL_ALIGN, minValue: 0, maxValue: 250}}
         ];
     },
 

@@ -143,6 +143,26 @@ describe('Calculation for chart', function () {
         );
     });
 
+    it('with custom start date earlier than default: existing data for days before default start not removed but displayed', function () {
+        expectCalculation(chartData("2016-05-10", 5, [
+            InProgress([0, 4, 3, 2, 2]),
+            Completed([0, 0, 5, 4, 4]),
+            Accepted([0, 0, 2, 8, 8]),
+            Planned([10, 15, 20, 20, 20])
+        ]), {
+            customStartDate: new Date("2016-05-01"),
+            endDate: new Date("2016-05-16"),
+            today: new Date("2016-05-13")
+        }).toReturn({
+                categories: ['10May16', '11May16', '12May16', '13May16', '16May16'],
+                series: [InProgress([0, 4, 3, 2, null]), Completed([0, 0, 5, 4, null]), Accepted([0, 0, 2, 8, null]), Planned([10, 15, 20, 20, 20]), Projection([null, null, 2, 8, 14]), Ideal([null, null, 2, 11, 20])]
+            }, {
+                xAxis: {plotLines: [plannedEndLine(4), todayLine(3)]},
+                subtitle: subtitle(["Planned End: 16May16", "Projected End: 17May16"])
+            }
+        );
+    });
+
     it('with custom chart start date and custom projection date: appropriate days truncated and projection calculated for custom date', function () {
         expectCalculation(chartData("2016-05-10", 5, [
             InProgress([2, 2, 2, 2, 2]),

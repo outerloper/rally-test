@@ -100,7 +100,7 @@ Ext.define("My.BurnUpCalculation", {
                 }
             }
         });
-        var startIndex = this.calcConfig.customStartDate ? this.findDateIndex(data.categories, this.calcConfig.customStartDate, false, firstInProgressIndex) : firstInProgressIndex;
+        var startIndex = this.calcConfig.customStartDate ? this.findDateIndex(data.categories, this.calcConfig.customStartDate, false, 0) : firstInProgressIndex;
         data.series.forEach(function (series) {
             series.data = series.data.slice(startIndex);
         });
@@ -203,13 +203,15 @@ Ext.define("My.BurnUpCalculation", {
 
     findDateIndex: function (dates, date, floating, defaultIndex) {
         var searchedDateString = (date instanceof Date) ? dateToIsoString(date) : date;
-        for (var i = 0; i < dates.length; i++) {
-            var dateString = dates[i];
-            if (dateString >= searchedDateString) {
-                return dateString > searchedDateString ? i - (floating ? 0.5 : 1) : i;
+        if (dates.length > 0 && dates[0] <= searchedDateString) {
+            for (var i = 0; i < dates.length; i++) {
+                var dateString = dates[i];
+                if (dateString >= searchedDateString) {
+                    return dateString > searchedDateString ? i - (floating ? 0.5 : 1) : i;
+                }
             }
         }
-        return defaultIndex || -1;
+        return defaultIndex || defaultIndex === 0 ? defaultIndex : -1;
     },
 
     getSeriesData: function (data, name) {
