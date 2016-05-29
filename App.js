@@ -122,6 +122,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                         marker: {enabled: true}
                     },
                     column: {
+                        pointPadding: 0,
+                        groupPadding: 0.2,
                         stacking: true
                     },
                     area: {

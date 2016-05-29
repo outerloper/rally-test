@@ -83,7 +83,7 @@ Ext.define("My.BurnUpCalculation", {
         this.adjustChartStart(data);
         this.stripFutureBars(data);
         this.addProjectionsLinesAndSubtitle(data);
-        this.reformatDates(data);
+        this.adjustDataAndChartConfig(data);
 
         return this.chartConfig;
     },
@@ -224,10 +224,24 @@ Ext.define("My.BurnUpCalculation", {
         return [];
     },
 
-    reformatDates: function (data) {
+    adjustDataAndChartConfig: function (data) {
         data.categories = data.categories.map(function (date) {
             return formatDate(date);
         });
+        if (data.categories.length > 100) {
+            Ext.merge(this.chartConfig, {
+                xAxis: {
+                    labels: {
+                        step: 10
+                    }
+                },
+                plotOptions: {
+                    line: {
+                        marker: {enabled: false}
+                    }
+                }
+            });
+        }
     },
 
     linearProjectionStep: function (startIndex, startValue, endIndex, endValue) {
