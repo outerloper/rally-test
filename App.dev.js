@@ -22,6 +22,11 @@ function storeDataToString(data, columns) {
     }, [actualColumns.join('\t') + '\t' + data.length]).join('\n');
 }
 
+function printStoreData(data, columns)
+{
+    dev && console.debug(storeDataToString(data, columns));
+}
+
 function chartData(dateFrom, days, series) {
     var data = {categories: [], series: series};
     var date = new Date(dateFrom);
@@ -44,8 +49,8 @@ function Accepted(data) {
     return {name: "Accepted", data: data, type: "column", dashStyle: "Solid"};
 }
 
-function Planned(data) {
-    return {name: "Planned", data: data, type: "line", dashStyle: "Solid"};
+function Scope(data) {
+    return {name: "Scope", data: data, type: "line", dashStyle: "Solid"};
 }
 
 
@@ -62,28 +67,47 @@ window.dev = {
      * The below is used for development purposes, to override/mock app behavior when running from App-dev.html
      */
     app: {
-        getMilestoneId: function () {
-            //return 53823409519; // d15
-            return undefined; // from app context
+        getMilestoneIds: function () {
+            //return [55779773422]; // b
+            //return [53884362051]; // 14.3
+            //return [53823409519]; // d15.1
+            //return [53823409519, 53823678379]; // d15.1 s15.1
+            //return [53823678379]; // s15.1
+            //return [55681896657]; // d15.2
+            //return [55692822039]; // d15.3
+            //return [53888803641]; // d16.0
+            //return [49774672980]; // css/int/rel7.3
+            //return [53823409519, 53823678379];
+            return []; // from app context
+        },
+        getReleaseId: function () {
+            //return 53630224894; // 002
+            return 53630224897; // 003
+            //return 53630224900; // 004
+            //return 53630224894, 53630224897;
+            return null; // from app context
         },
         getProjectId: function () {
             //return 52219765529; // csm
             //return 52953911025; // fm
             //return 52220062189; // pm
-            //return 52220062990; // sm
+            return 52220062990; // sm
             //return 53630224881; // smk
             //return 53630226508; // smd
             //return 52219769418; // slm
             //return 52219764059; // s
             //return 52219602590; // a
-            return undefined; // from app context
+            //return 29475348986; // css/int
+            //return 27159833906; // css
+            //return undefined; // from app context
         },
-        getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
+        _getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
+            this.setDataLoaded();
             return expectCalculation(chartData("2016-05-10", 5, [
                 InProgress([2, 2, 2, 2, 2]),
                 Completed([0, 2, 2, 2, 2]),
                 Accepted([0, 10, 10, 15, 15]),
-                Planned([10, 15, 20, 20, 20])
+                Scope([10, 15, 20, 20, 20])
             ]), {
                 customStartDate: new Date("2016-05-11"),
                 customProjectionStartDate: new Date("2016-05-12"),
@@ -91,7 +115,8 @@ window.dev = {
                 today: new Date("2016-05-13")
             });
         },
-        getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
+        _getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
+            this.setDataLoaded();
             return expectCalculation({
                     "series": [{
                         "name": "In Progress",
@@ -109,7 +134,7 @@ window.dev = {
                         "type": "column",
                         "dashStyle": "Solid"
                     }, {
-                        "name": "Planned",
+                        "name": "Scope",
                         "data": [72, 72, 72, 72, 72, 72, 72, 83, 83, 83, 83, 83, 94, 94, 94, 94, 94, 94, 94, 94, 94, 94, 88, 88, 88, 88, 88, 88, 88, 88, 88, 88, 88, 88, 88],
                         "type": "line",
                         "dashStyle": "Solid"

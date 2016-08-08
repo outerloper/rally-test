@@ -49,13 +49,13 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 4, 4]),
             Accepted([0, 0, 2, 8, 8]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
-                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Planned([15, 20, 20, 20]), Projection([null, 2, 8, 14]), Ideal([null, 2, 11, 20])]
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Scope([15, 20, 20, 20]), Projection([null, 2, 8, 14]), Ideal([null, 2, 11, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(2)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 17May16"])
@@ -68,14 +68,14 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 4, 4]),
             Accepted([0, 0, 2, 8, 8]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
-            customProjectionStartDate: new Date("2016-05-11"),
+            customTrendStartDate: new Date("2016-05-11"),
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
-                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Planned([15, 20, 20, 20]), Projection([0, 4, 8, 12]), Ideal([0, 20 / 3, 20 / 3 * 2, 20])]
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Scope([15, 20, 20, 20]), Projection([0, 4, 8, 12]), Ideal([0, 20 / 3, 20 / 3 * 2, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(2)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 18May16"])
@@ -88,14 +88,14 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 4, 4]),
             Accepted([0, 0, 2, 8, 8]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 10,
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
-                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Planned([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20]), Ideal([null, 2, 11, 20])]
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Scope([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20]), Ideal([null, 2, 11, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(2), projectedEndLine(4)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 17May16"])
@@ -108,14 +108,14 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 4, 4]),
             Accepted([0, 0, 4, 8, 8]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 1,
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
-                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 4, 8, null]), Planned([15, 20, 20, 20, 20]), Projection([null, 4, 8, 12, 16]), Ideal([null, 4, 12, 20])]
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 4, 8, null]), Scope([15, 20, 20, 20, 20]), Projection([null, 4, 8, 12, 16]), Ideal([null, 4, 12, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(2)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 18May16"])
@@ -128,14 +128,14 @@ describe('Calculation for chart', function () {
             InProgress([2, 2, 2, 2, 2]),
             Completed([0, 2, 2, 2, 2]),
             Accepted([0, 10, 10, 15, 15]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             customStartDate: new Date("2016-05-12"),
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['12May16', '13May16', '16May16'],
-                series: [InProgress([2, 2, null]), Completed([2, 2, null]), Accepted([10, 15, null]), Planned([20, 20, 20]), Projection([10, 15, 20]), Ideal([10, 15, 20])]
+                series: [InProgress([2, 2, null]), Completed([2, 2, null]), Accepted([10, 15, null]), Scope([20, 20, 20]), Projection([10, 15, 20]), Ideal([10, 15, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(2), todayLine(1)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 16May16"])
@@ -148,14 +148,14 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 4, 4]),
             Accepted([0, 0, 2, 8, 8]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             customStartDate: new Date("2016-05-01"),
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['10May16', '11May16', '12May16', '13May16', '16May16'],
-                series: [InProgress([0, 4, 3, 2, null]), Completed([0, 0, 5, 4, null]), Accepted([0, 0, 2, 8, null]), Planned([10, 15, 20, 20, 20]), Projection([null, null, 2, 8, 14]), Ideal([null, null, 2, 11, 20])]
+                series: [InProgress([0, 4, 3, 2, null]), Completed([0, 0, 5, 4, null]), Accepted([0, 0, 2, 8, null]), Scope([10, 15, 20, 20, 20]), Projection([null, null, 2, 8, 14]), Ideal([null, null, 2, 11, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(4), todayLine(3)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 17May16"])
@@ -168,15 +168,15 @@ describe('Calculation for chart', function () {
             InProgress([2, 2, 2, 2, 2]),
             Completed([0, 2, 2, 2, 2]),
             Accepted([0, 10, 10, 15, 15]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             customStartDate: new Date("2016-05-11"),
-            customProjectionStartDate: new Date("2016-05-12"),
+            customTrendStartDate: new Date("2016-05-12"),
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
-                series: [InProgress([2, 2, 2, null]), Completed([2, 2, 2, null]), Accepted([10, 10, 15, null]), Planned([15, 20, 20, 20]), Projection([null, 10, 15, 20]), Ideal([null, 10, 15, 20])]
+                series: [InProgress([2, 2, 2, null]), Completed([2, 2, 2, null]), Accepted([10, 10, 15, null]), Scope([15, 20, 20, 20]), Projection([null, 10, 15, 20]), Ideal([null, 10, 15, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(2)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 16May16"])
@@ -189,13 +189,13 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 4, 7]),
             Accepted([0, 0, 2, 8, 5]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-14")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
-                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Planned([15, 20, 20, 20]), Projection([null, 2, 8, 14]), Ideal([null, 2, 11, 20])]
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Scope([15, 20, 20, 20]), Projection([null, 2, 8, 14]), Ideal([null, 2, 11, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(2.5)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 17May16"])
@@ -208,12 +208,12 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2]),
             Completed([0, 0, 5, 4]),
             Accepted([0, 0, 2, 8]),
-            Planned([10, 15, 20, 20])
+            Scope([10, 15, 20, 20])
         ]), {
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16'],
-                series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Planned([15, 20, 20]), Projection([null, 2, 8])]
+                series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Scope([15, 20, 20]), Projection([null, 2, 8])]
             }, {
                 xAxis: {plotLines: [todayLine(2)]},
                 subtitle: subtitle(["Projected End: 17May16"])
@@ -226,13 +226,13 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2]),
             Completed([0, 0, 5, 4]),
             Accepted([0, 0, 2, 8]),
-            Planned([10, 15, 20, 20])
+            Scope([10, 15, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 10,
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
-                series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Planned([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20])]
+                series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Scope([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20])]
             }, {
                 xAxis: {plotLines: [todayLine(2), projectedEndLine(4)]},
                 subtitle: subtitle(["Projected End: 17May16"])
@@ -245,13 +245,13 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 4, 4]),
             Accepted([0, 0, 2, 8, 8]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 10,
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
-                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Planned([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20])]
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 4, null]), Accepted([0, 2, 8, null]), Scope([15, 20, 20, 20, 20]), Projection([null, 2, 8, 14, 20])]
             }, {
                 xAxis: {plotLines: [todayLine(2), projectedEndLine(4)]},
                 subtitle: subtitle(["Projected End: 17May16"])
@@ -264,13 +264,13 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2]),
             Completed([0, 0, 5, 4]),
             Accepted([0, 0, 2, 8]),
-            Planned([10, 15, 20, 20])
+            Scope([10, 15, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 1,
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
-                series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Planned([15, 20, 20, 20]), Projection([null, 2, 8, 14])]
+                series: [InProgress([4, 3, 2]), Completed([0, 5, 4]), Accepted([0, 2, 8]), Scope([15, 20, 20, 20]), Projection([null, 2, 8, 14])]
             }, {
                 xAxis: {plotLines: [todayLine(2)]},
                 subtitle: subtitle(["Projected End: 17May16"])
@@ -283,12 +283,12 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3]),
             Completed([0, 0, 5]),
             Accepted([0, 0, 2]),
-            Planned([10, 15, 20])
+            Scope([10, 15, 20])
         ]), {
             today: new Date("2016-05-12")
         }).toReturn({
                 categories: ['11May16', '12May16'],
-                series: [InProgress([4, 3]), Completed([0, 5]), Accepted([0, 2]), Planned([15, 20])]
+                series: [InProgress([4, 3]), Completed([0, 5]), Accepted([0, 2]), Scope([15, 20])]
             }, {
                 xAxis: {plotLines: [todayLine(1)]},
                 subtitle: subtitle()
@@ -301,13 +301,13 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 10, 7]),
             Accepted([0, 0, 2, 2, 5]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
-                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 10, null]), Accepted([0, 2, 2, null]), Planned([15, 20, 20, 20]), Ideal([null, 2, 11, 20])]
+                series: [InProgress([4, 3, 2, null]), Completed([0, 5, 10, null]), Accepted([0, 2, 2, null]), Scope([15, 20, 20, 20]), Ideal([null, 2, 11, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(2)]},
                 subtitle: subtitle(["Planned End: 16May16"])
@@ -320,14 +320,14 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2, 1]),
             Completed([0, 0, 5, 4, 3, 2]),
             Accepted([0, 0, 2, 8, 12, 17]),
-            Planned([10, 15, 20, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20, 20])
         ]), {
             maxDaysAfterPlannedEnd: 10,
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-17")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16', '18May16'],
-                series: [InProgress([4, 3, 2, 2, 1]), Completed([0, 5, 4, 3, 2]), Accepted([0, 2, 8, 12, 17]), Planned([15, 20, 20, 20, 20, 20]), Projection([null, 2, 7, 12, 17, 22]), Ideal([null, 2, 11, 20])]
+                series: [InProgress([4, 3, 2, 2, 1]), Completed([0, 5, 4, 3, 2]), Accepted([0, 2, 8, 12, 17]), Scope([15, 20, 20, 20, 20, 20]), Projection([null, 2, 7, 12, 17, 22]), Ideal([null, 2, 11, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(4), projectedEndLine(5)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 18May16"])
@@ -340,13 +340,13 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 0, 0]),
             Completed([0, 0, 5, 4, 2, 0]),
             Accepted([0, 0, 2, 12, 18, 20]),
-            Planned([10, 15, 20, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20, 20])
         ]), {
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-17")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
-                series: [InProgress([4, 3, 2, 0, 0]), Completed([0, 5, 4, 2, 0]), Accepted([0, 2, 12, 18, 20]), Planned([15, 20, 20, 20, 20]), Ideal([null, 2, 11, 20])]
+                series: [InProgress([4, 3, 2, 0, 0]), Completed([0, 5, 4, 2, 0]), Accepted([0, 2, 12, 18, 20]), Scope([15, 20, 20, 20, 20]), Ideal([null, 2, 11, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(4)]},
                 subtitle: subtitle(["Planned End: 16May16"])
@@ -359,13 +359,13 @@ describe('Calculation for chart', function () {
             InProgress([0, 4, 3, 2, 2]),
             Completed([0, 0, 5, 7, 7]),
             Accepted([0, 2, 12, 19, 19]),
-            Planned([10, 15, 20, 20, 20])
+            Scope([10, 15, 20, 20, 20])
         ]), {
             plannedEndDate: new Date("2016-05-16"),
             today: new Date("2016-05-12")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
-                series: [InProgress([4, 3, null, null]), Completed([0, 5, null, null]), Accepted([2, 12, null, null]), Planned([15, 20, 20, 20]), Projection([2, 12, 22]), Ideal([2, 8, 14, 20])]
+                series: [InProgress([4, 3, null, null]), Completed([0, 5, null, null]), Accepted([2, 12, null, null]), Scope([15, 20, 20, 20]), Projection([2, 12, 22]), Ideal([2, 8, 14, 20])]
             }, {
                 xAxis: {plotLines: [plannedEndLine(3), todayLine(1), projectedEndLine(2)]},
                 subtitle: subtitle(["Planned End: 16May16", "Projected End: 13May16"])

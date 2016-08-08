@@ -1,0 +1,173 @@
+{
+  "QueryResult": {
+    "_rallyAPIMajor": "2",
+    "_rallyAPIMinor": "0",
+    "Errors": [],
+    "Warnings": [],
+    "TotalResultCount": 31,
+    "StartIndex": 1,
+    "PageSize": 20,
+    "Results": [
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/36179997143",
+        "_refObjectUUID": "17500e84-b83f-4fa3-9bc4-c70a3a8bd6d6",
+        "_refObjectName": "Fix-GC-Exception is displayed on selecting a product and navigating to package selection page for chain level template",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/38005294930",
+        "_refObjectUUID": "5721915b-4ec5-4d90-88ce-047b1b46c026",
+        "_refObjectName": "[FF Design] Navigating through a content page",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/38840831074",
+        "_refObjectUUID": "a0166ec9-932f-41aa-ab3b-9917284679f5",
+        "_refObjectName": "[Continued] ARI - Aggregating priority triggers",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/44901791538",
+        "_refObjectUUID": "28d65f97-23fa-41d6-a8da-7f57958149f1",
+        "_refObjectName": "** Investigating Issues - awareness **",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/46674366559",
+        "_refObjectUUID": "2da3deb7-8af0-4673-9f02-3a1d6dd2f044",
+        "_refObjectName": "[Unfinished] ARI - Aggregating priority triggers",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/47051017200",
+        "_refObjectUUID": "bcdd9204-888c-4cf3-a851-74a05f7cbbc8",
+        "_refObjectName": "UA-1F Economy plus by XML - investigating issues with seats confirmations on INT",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/51392220752",
+        "_refObjectUUID": "e1373263-3443-4185-bce6-699ce4bd1220",
+        "_refObjectName": "GC: Investigating \"Rates\" Category Failed & Errors  in Test2 environment",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/51886915183",
+        "_refObjectUUID": "0a48d92b-a899-432a-87e5-6bf8fb0df83c",
+        "_refObjectName": "Defect tied to SPR-46932 - Another Problem Reported - Does Not Fit Pattern of Prior Problems - Investigating SPIKE",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/53736156794",
+        "_refObjectUUID": "d6a0856f-0d65-465c-9579-f55b8dd93db1",
+        "_refObjectName": "#2 Gating view opening for active schedule",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/54941579154",
+        "_refObjectUUID": "a18027e6-bf24-410d-914c-fc03f48e25b2",
+        "_refObjectName": "#3 Toolbar in Gating view",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/54941787800",
+        "_refObjectUUID": "2c560571-59f3-4da8-9692-5632d19c407c",
+        "_refObjectName": "#4 ILog Gantt chart in Gating view",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/54945677701",
+        "_refObjectUUID": "a5c80eef-b7dd-4cca-83bb-e2674218c52f",
+        "_refObjectName": "#9 Zoom in and out chart in Gating view",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/55976657969",
+        "_refObjectUUID": "479e651c-fcd5-4050-bdf5-d750575d4352",
+        "_refObjectName": "Investigating story - Recognize the list of applications in Schedule Change and Inventory which uses INM/IND to identify the type of inventory type change & Identify the dependent and independent programs",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/56246845478",
+        "_refObjectUUID": "9b1bb637-87f5-4ce7-90fe-2a56de7316f3",
+        "_refObjectName": "Navigating from Slider Drawer to Rules workflow",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/56264404241",
+        "_refObjectUUID": "8fa4c98e-1ead-4261-9834-8c1cea897e06",
+        "_refObjectName": "investigating error on TKTWS on new VM PROD machines",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/56563766404",
+        "_refObjectUUID": "383a9a7b-18b6-46f8-a476-ed72ccbca1b0",
+        "_refObjectName": "Aggregating Data at Choice Set   Opt Group  and Item Level",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/56563766676",
+        "_refObjectUUID": "3b6fca82-1442-43ff-9000-355a7feba27a",
+        "_refObjectName": "[Backend]Aggregating data at LOCO level",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/56563766955",
+        "_refObjectUUID": "11b55549-241c-4888-b355-1aeb159755eb",
+        "_refObjectName": "Aggregating data at ROM_TOP_SPILL_OPPS Level",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/56563767092",
+        "_refObjectUUID": "ce54a107-7c6d-4fda-a8b1-ccf7cf28ab74",
+        "_refObjectName": "Aggregating data at ROM_TOP_RECAPTURE_OPPS Level",
+        "_type": "HierarchicalRequirement"
+      },
+      {
+        "_rallyAPIMajor": "2",
+        "_rallyAPIMinor": "0",
+        "_ref": "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/56807099681",
+        "_refObjectUUID": "8b45aa06-ee9d-4cc2-afce-f51c12e7d5e0",
+        "_refObjectName": "Spike for investigating optimization engine",
+        "_type": "HierarchicalRequirement"
+      }
+    ]
+  }
+}
