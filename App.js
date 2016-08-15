@@ -1,3 +1,5 @@
+window.dev = window.dev || undefined;
+
 Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     extend: "Rally.app.App",
     componentCls: "app",

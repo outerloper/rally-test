@@ -7,9 +7,7 @@
 
     <script type="text/javascript">
         Rally.onReady(function () {
-                window.dev = window.dev || undefined;
-
-function resolvedPromise(value) {
+                function resolvedPromise(value) {
     return Deft.promise.Promise.when(value);
 }
 
@@ -114,7 +112,22 @@ function joinNotEmpty(array, glue, prefixIfNotEmpty, suffixIfNotEmpty) {
 }
 
 
-Ext.define("My.BurnUpCalculation", {
+function addBusinessDays(date, businessDays) {
+    var result = new Date(date);
+    var days = result.getDate();
+    var d = result.getDay();
+    while (businessDays > 0) {
+        ++days;
+        d = (d + 1) % 7;
+        if (d !== 0 && d != 6) {
+            --businessDays;
+        }
+    }
+    result.setDate(days);
+    return result;
+}
+
+                Ext.define("My.BurnUpCalculation", {
 
     /**
      * @param {Object} config
@@ -448,22 +461,9 @@ Ext.define("My.BurnUpCalculation", {
     }
 });
 
-function addBusinessDays(date, businessDays) {
-    var result = new Date(date);
-    var days = result.getDate();
-    var d = result.getDay();
-    while (businessDays > 0) {
-        ++days;
-        d = (d + 1) % 7;
-        if (d !== 0 && d != 6) {
-            --businessDays;
-        }
-    }
-    result.setDate(days);
-    return result;
-}
+                window.dev = window.dev || undefined;
 
-                Ext.define("MilestoneBurnupWithProjection", Ext.merge({
+Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     extend: "Rally.app.App",
     componentCls: "app",
 
