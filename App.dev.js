@@ -61,12 +61,35 @@ function expectCalculation(data, calcConfig) {
     });
 }
 
-
 window.dev = {
     /**
      * The below is used for development purposes, to override/mock app behavior when running from App-dev.html
      */
     app: {
+        config: {
+            defaultSettings: {
+                //customTrendStartDate: "2016-03-01",
+                //customStartDate: "2016-05-05",
+                maxDaysAfterPlannedEnd: 60,
+                //customTitle: "XXX",
+                markAuxDates: true,
+                smallDisplay: false,
+                //project: "/project/52219765529", // csm
+                //project: "/project/52953911025", // fm
+                //project: "/project/52220062189", // pm
+                project: "/project/52220062990", // sm
+                //project: "/project/53630224881", // smk
+                //project: "/project/53630226508", // smd
+                //project: "/project/52219769418", // slm
+                //project: "/project/52219764059", // s
+                //project: "/project/52219602590", // a
+                //project: "/project/29475348986", // css/int
+                //project: "/project/27159833906", // css
+                //project: undefined, // from app context
+                xxxx: null
+            }
+        },
+
         getMilestoneIds: function () {
             //return [55779773422]; // b
             //return [53884362051]; // 14.3
@@ -81,28 +104,14 @@ window.dev = {
             return []; // from app context
         },
         getReleaseId: function () {
-            //return 53630224894; // 002
-            return 53630224897; // 003
+            return 53630224894; // 002
+            //return 53630224897; // 003
             //return 53630224900; // 004
             //return 53630224894, 53630224897;
             return null; // from app context
         },
-        getProjectId: function () {
-            //return 52219765529; // csm
-            //return 52953911025; // fm
-            //return 52220062189; // pm
-            return 52220062990; // sm
-            //return 53630224881; // smk
-            //return 53630226508; // smd
-            //return 52219769418; // slm
-            //return 52219764059; // s
-            //return 52219602590; // a
-            //return 29475348986; // css/int
-            //return 27159833906; // css
-            //return undefined; // from app context
-        },
         _getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
-            this.setDataLoaded();
+            this.setDataLoaded(true);
             return expectCalculation(chartData("2016-05-10", 5, [
                 InProgress([2, 2, 2, 2, 2]),
                 Completed([0, 2, 2, 2, 2]),
@@ -116,7 +125,7 @@ window.dev = {
             });
         },
         _getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
-            this.setDataLoaded();
+            this.setDataLoaded(true);
             return expectCalculation({
                     "series": [{
                         "name": "In Progress",
