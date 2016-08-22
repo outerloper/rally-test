@@ -33,18 +33,6 @@ function getMilestoneUrl(milestone, context) {
     return "https://rally1.rallydev.com/#/" + context.getProject().ObjectID + "d/detail" + milestone.getUri();
 }
 
-function formatRelease(release, context) {
-    return "<a target='_blank' style='color:#274b6d' href='" + getReleaseUrl(release, context) + "'>" + release.get("Name") + "</a>";
-}
-
-function getReleaseUrl(release, context) {
-    return "https://rally1.rallydev.com/slm/rl/edit.sp?cpoid=" + context.getProject().ObjectID +
-        "&projectScopeUp=" + context.getProjectScopeUp() +
-        "&projectScopeDown=" + context.getProjectScopeDown() +
-        "&oid=" + release.getId() +
-        "&typeDef=27154375554";
-}
-
 function formatProject(project, page) {
     return page ? "<a target='_blank' style='color:#274b6d' href='https://rally1.rallydev.com/#/" + project.get("ObjectID") + "d/" + page + "'>" + project.get("Name") + "</a>"
         : project.get("Name");

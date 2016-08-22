@@ -95,14 +95,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         return milestones ? milestones.split(",") : [];
     },
 
-    getReleaseId: function () {
-        var timebox = this.getContextTimebox();
-        if (getRallyRecordType(timebox) == "release") {
-            return timebox || this.getSetting("release");
-        }
-        return null;
-    },
-
     getProjectId: function () {
         var project = this.getSetting("project");
         if (project) {
@@ -144,13 +136,11 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     onTimeboxScopeChange: function (timeboxScope) {
         var timebox = timeboxScope.getRecord();
         var timeboxType = getRallyRecordType(timebox);
-        if (timeboxType == "milestone" || timeboxType == "release") {
+        if (timeboxType == "milestone") {
             this.setContextTimebox(timeboxScope);
             var settings = {};
             if (timeboxType == "milestone") {
                 settings.milestones = [timebox.get("_ref")];
-            } else {
-                settings.release = timebox.get("_ref");
             }
             Rally.data.PreferenceManager.update({
                 appID: this.getAppId(),
@@ -264,12 +254,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 },
                 scope: this
             }),
-            !this.getReleaseId() ? null : Rally.data.ModelFactory.getModel({type: "Release"}).then({
-                success: function (model) {
-                    return model.load(this.getReleaseId());
-                },
-                scope: this
-            }),
             !this.getProjectId("project") ? this.getProjectId() : Rally.data.ModelFactory.getModel({type: "Project"}).then({
                 success: function (model) {
                     return model.load(this.getProjectId());
@@ -284,19 +268,16 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         ]).then({
             success: function (contextItems) {
                 var milestones = contextItems[0];
-                var release = contextItems[1];
-                this.project = contextItems[2];
+                this.project = contextItems[1];
                 this.ensureColorsForMilestones(milestones);
-                if (!release && milestones.length === 0) {
-                    return rejectedPromise("No milestone specified. Set milestone or release filter in your page settings or choose milestone in your app settings.");
+                if (milestones.length === 0) {
+                    return rejectedPromise("No milestone specified. Set milestone filter in your page settings or choose milestone in your app settings.");
                 }
-                this.iteration = contextItems[3][0];
-                this.velocity = release && release.get("PlannedVelocity") ? {text: release.get("Name") + " Planned Velocity", value: release.get("PlannedVelocity")} : null;
+                this.iteration = contextItems[2][0];
                 var query = joinNotEmpty([
                     joinNotEmpty(milestones.map(function (milestone) {
                         return "(Milestones.ObjectID contains " + milestone.getId() + ")";
-                    }), " OR ", "(", ")"),
-                    release ? "(Release.ObjectID = " + release.getId() + ")" : null
+                    }), " OR ", "(", ")")
                 ], " AND ", "(", ")");
                 var filter = Rally.data.wsapi.Filter.fromQueryString(query);
                 var context = {project: this.getProjectId() ? "/project/" + this.getProjectId() : null};
@@ -316,7 +297,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                         var artifactIds = [].concat(results[0], results[1], results[2]).map(function (record) {
                             return +record.raw.ObjectID;
                         });
-                        return this.getConfigForChart(artifactIds, milestones, release);
+                        return this.getConfigForChart(artifactIds, milestones);
                     },
                     scope: this
                 });
@@ -325,7 +306,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         });
     },
 
-    getConfigForChart: function (artifactIds, milestones, release) {
+    getConfigForChart: function (artifactIds, milestones) {
         var storeConfig = {
             listeners: {
                 load: function (store, data, success) {
@@ -347,7 +328,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         };
 
         var today = new Date();
-        var plannedEndDate = this.getPlannedEndDate(milestones, release);
+        var plannedEndDate = this.getPlannedEndDate(milestones);
         var maxDaysAfterPlannedEnd = this.getSetting("maxDaysAfterPlannedEnd");
         var endDate = plannedEndDate;
         if (!plannedEndDate) {
@@ -364,8 +345,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     maxEndDate: endDate,
                     plannedEndDate: plannedEndDate,
                     iteration: this.iteration,
-                    velocity: this.velocity,
-                    auxDates: this.getAuxDates(milestones, release),
+                    auxDates: this.getAuxDates(milestones),
                     customStartDate: this.getSetting("customStartDate"),
                     customTrendStartDate: this.getSetting("customTrendStartDate"),
                     maxDaysAfterPlannedEnd: maxDaysAfterPlannedEnd,
@@ -377,10 +357,10 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             storeConfig: storeConfig,
 
             exceptionHandler: loggingSnapshotStoreExceptionHandler,
-            queryErrorMessage: "No work items found for <strong>" + this.getChartTitle(milestones, release) + "</strong>.",
+            queryErrorMessage: "No work items found for <strong>" + this.getChartTitle(milestones) + "</strong>.",
 
             chartConfig: {
-                title: {text: this.getChartTitle(milestones, release), useHTML: true}
+                title: {text: this.getChartTitle(milestones), useHTML: true}
             }
         };
     },
@@ -396,7 +376,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     },
 
 
-    getPlannedEndDate: function (milestones, release) {
+    getPlannedEndDate: function (milestones) {
         var app = this;
         var latestMilestoneDate = null;
         milestones.forEach(function (milestone) {
@@ -409,10 +389,10 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         if (!app.scopeColor) {
             app.scopeColor = "#D42";
         }
-        return !latestMilestoneDate && release ? release.get("ReleaseDate") : latestMilestoneDate;
+        return latestMilestoneDate;
     },
 
-    getAuxDates: function (milestones, release) {
+    getAuxDates: function (milestones) {
         var result = {};
         var app = this;
         milestones.forEach(function (milestone) {
@@ -429,29 +409,19 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 result[dateToIsoString(milestone.get("TargetDate"))] = milestoneIcon(milestone) + " " + milestone.get("Name");
             }
         });
-        if (release) {
-            if (release.get("ReleaseDate")) {
-                result[dateToIsoString(release.get("ReleaseDate"))] = release.get("Name");
-            }
-        }
         return result;
     },
 
-    getChartTitle: function (milestones, release) {
+    getChartTitle: function (milestones) {
         var customTitle = this.getSetting("customTitle");
         if (customTitle) {
             return customTitle;
         }
         var context = this.getContext();
-        return joinNotEmpty([
-            joinNotEmpty([
-                release ? formatRelease(release, context) : null,
-                milestones.map(function (milestone) {
-                    return formatMilestone(milestone, context);
-                }).join(", ")
-            ], ": "),
-            formatProject(this.project, this.getSetting("projectTargetPage"))
-        ], " &mdash; ");
+        return milestones.map(function (milestone) {
+                return formatMilestone(milestone, context);
+            }).join(", ") +
+            " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
     }
 }, dev ? dev.app : null));
 

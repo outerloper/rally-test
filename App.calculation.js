@@ -16,7 +16,6 @@ Ext.define("My.BurnUpCalculation", {
             today: config.today || new Date(),
             maxEndDate: config.maxEndDate,
             iteration: config.iteration,
-            velocity: config.velocity,
             auxDates: config.auxDates,
             plannedEndDate: config.plannedEndDate,
             customStartDate: config.customStartDate,
@@ -189,9 +188,6 @@ Ext.define("My.BurnUpCalculation", {
         }
         if (completedIndex) {
             this.addVerticalLine("Completed", completedIndex, {color: "#774"});
-        }
-        if (config.velocity) {
-            this.chartConfig.yAxis.plotLines = [{label: {text: config.velocity.text}, value: config.velocity.value, color: "#D42", width: 1, dashStyle: "Dash", zIndex: 5}];
         }
     },
 
