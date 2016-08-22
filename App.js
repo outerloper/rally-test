@@ -26,7 +26,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             name: "milestones",
             label: "Milestone(s)",
             xtype: "rallymilestonecombobox",
-            editable: false,
+            editable: true,
             multiSelect: true,
             allowNoEntry: true,
             emptyText: "-- Choose --",
@@ -61,9 +61,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until...", config: defaultConfig});
         settingsFields.push({name: "customTrendStartDate", xtype: "rallydatefield", label: "Custom Trend line start", config: defaultConfig});
         settingsFields.push({
-            name: "maxDaysAfterPlannedEnd",
+            name: "maxDaysAfterTargetDate",
             xtype: "rallynumberfield",
-            label: "Max days to show after Planned End date",
+            label: "Max days to show after Target Date",
             config: Ext.merge(Ext.clone(defaultConfig), {minValue: 0, maxValue: 250})
         });
         // disabled for now, not sure if needed
@@ -81,7 +81,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
 
     config: {
         defaultSettings: {
-            maxDaysAfterPlannedEnd: 45,
+            maxDaysAfterTargetDate: 45,
             markAuxDates: true,
             projectTargetPage: "iterationstatus"
         }
@@ -328,13 +328,13 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         };
 
         var today = new Date();
-        var plannedEndDate = this.getPlannedEndDate(milestones);
-        var maxDaysAfterPlannedEnd = this.getSetting("maxDaysAfterPlannedEnd");
-        var endDate = plannedEndDate;
-        if (!plannedEndDate) {
+        var targetDate = this.getTargetDate(milestones);
+        var maxDaysAfterTargetDate = this.getSetting("maxDaysAfterTargetDate");
+        var endDate = targetDate;
+        if (!targetDate) {
             endDate = today;
-        } else if (today > plannedEndDate) {
-            var maxEndDate = addBusinessDays(plannedEndDate, maxDaysAfterPlannedEnd);
+        } else if (today > targetDate) {
+            var maxEndDate = addBusinessDays(targetDate, maxDaysAfterTargetDate);
             endDate = today > maxEndDate ? maxEndDate : today;
         }
         return {
@@ -343,12 +343,12 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 endDate: endDate,
                 calculationConfig: {
                     maxEndDate: endDate,
-                    plannedEndDate: plannedEndDate,
+                    targetDate: targetDate,
                     iteration: this.iteration,
                     auxDates: this.getAuxDates(milestones),
                     customStartDate: this.getSetting("customStartDate"),
                     customTrendStartDate: this.getSetting("customTrendStartDate"),
-                    maxDaysAfterPlannedEnd: maxDaysAfterPlannedEnd,
+                    maxDaysAfterTargetDate: maxDaysAfterTargetDate,
                     smallDisplay: this.getSetting("smallDisplay")
                 }
             },
@@ -376,7 +376,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     },
 
 
-    getPlannedEndDate: function (milestones) {
+    getTargetDate: function (milestones) {
         var app = this;
         var latestMilestoneDate = null;
         milestones.forEach(function (milestone) {
@@ -401,12 +401,12 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     return html.trim().match(/(\d\d\d\d-\d\d-\d\d)\W+(\w.*)/);
                 }).forEach(function (matches) {
                     if (matches && !isNaN(Date.parse(matches[1]))) {
-                        result[matches[1]] = matches[2];
+                        result[matches[1]] = matches[2].length <= 20 ? matches[2] : matches[2].substring(0, 20).trim() + "...";
                     }
                 });
             }
-            if (milestone.get("TargetDate")) {
-                result[dateToIsoString(milestone.get("TargetDate"))] = milestoneIcon(milestone) + " " + milestone.get("Name");
+            if (milestones.length > 1 && milestone.get("TargetDate")) {
+                result[dateToIsoString(milestone.get("TargetDate"))] = milestoneIcon(milestone) + milestone.get("Name");
             }
         });
         return result;

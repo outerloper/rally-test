@@ -70,7 +70,7 @@ window.dev = {
             defaultSettings: {
                 //customTrendStartDate: "2016-03-01",
                 //customStartDate: "2016-05-05",
-                maxDaysAfterPlannedEnd: 60,
+                maxDaysAfterTargetDate: 130,
                 //customTitle: "XXX",
                 markAuxDates: true,
                 smallDisplay: false,
@@ -94,7 +94,7 @@ window.dev = {
             //return [55779773422]; // b
             //return [53884362051]; // 14.3
             //return [60559020830]; // d14.5
-            //return [53823409519]; // d15.1
+            return [53823409519]; // d15.1
             //return [53823409519, 53823678379]; // d15.1 s15.1
             //return [53823678379]; // s15.1
             //return [55681896657]; // d15.2
@@ -149,10 +149,10 @@ window.dev = {
                         "2016-05-09", "2016-05-10", "2016-05-11", "2016-05-12", "2016-05-13", "2016-05-16", "2016-05-17", "2016-05-18", "2016-05-19", "2016-05-20"
                     ]
                 }, {
-                    maxDaysAfterPlannedEnd: 20,
+                    maxDaysAfterTargetDate: 20,
                     customProjectionStartDate: new Date("2016-05-02"),
                     customStartDate: new Date("2016-04-07"),
-                    plannedEndDate: new Date("2016-05-20"),
+                    targetDate: new Date("2016-05-20"),
                     today: new Date("2016-05-13")
                 }
             );

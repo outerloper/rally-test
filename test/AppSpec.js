@@ -51,7 +51,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8, 8]),
             Scope([10, 15, 20, 20, 20])
         ]), {
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -71,7 +71,7 @@ describe('Calculation for chart', function () {
             Scope([10, 15, 20, 20, 20])
         ]), {
             customTrendStartDate: new Date("2016-05-11"),
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -90,8 +90,8 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8, 8]),
             Scope([10, 15, 20, 20, 20])
         ]), {
-            maxDaysAfterPlannedEnd: 10,
-            plannedEndDate: new Date("2016-05-16"),
+            maxDaysAfterTargetDate: 10,
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
@@ -110,8 +110,8 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 4, 8, 8]),
             Scope([10, 15, 20, 20, 20])
         ]), {
-            maxDaysAfterPlannedEnd: 1,
-            plannedEndDate: new Date("2016-05-16"),
+            maxDaysAfterTargetDate: 1,
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
@@ -131,7 +131,7 @@ describe('Calculation for chart', function () {
             Scope([10, 15, 20, 20, 20])
         ]), {
             customStartDate: new Date("2016-05-12"),
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['12May16', '13May16', '16May16'],
@@ -151,7 +151,7 @@ describe('Calculation for chart', function () {
             Scope([10, 15, 20, 20, 20])
         ]), {
             customStartDate: new Date("2016-05-01"),
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['10May16', '11May16', '12May16', '13May16', '16May16'],
@@ -172,7 +172,7 @@ describe('Calculation for chart', function () {
         ]), {
             customStartDate: new Date("2016-05-11"),
             customTrendStartDate: new Date("2016-05-12"),
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -191,7 +191,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8, 5]),
             Scope([10, 15, 20, 20, 20])
         ]), {
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-14")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -228,7 +228,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8]),
             Scope([10, 15, 20, 20])
         ]), {
-            maxDaysAfterPlannedEnd: 10,
+            maxDaysAfterTargetDate: 10,
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
@@ -247,7 +247,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8, 8]),
             Scope([10, 15, 20, 20, 20])
         ]), {
-            maxDaysAfterPlannedEnd: 10,
+            maxDaysAfterTargetDate: 10,
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
@@ -266,7 +266,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8]),
             Scope([10, 15, 20, 20])
         ]), {
-            maxDaysAfterPlannedEnd: 1,
+            maxDaysAfterTargetDate: 1,
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -303,7 +303,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 2, 5]),
             Scope([10, 15, 20, 20, 20])
         ]), {
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-13")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],
@@ -322,8 +322,8 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 8, 12, 17]),
             Scope([10, 15, 20, 20, 20, 20])
         ]), {
-            maxDaysAfterPlannedEnd: 10,
-            plannedEndDate: new Date("2016-05-16"),
+            maxDaysAfterTargetDate: 10,
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-17")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16', '18May16'],
@@ -342,7 +342,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 0, 2, 12, 18, 20]),
             Scope([10, 15, 20, 20, 20, 20])
         ]), {
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-17")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16', '17May16'],
@@ -361,7 +361,7 @@ describe('Calculation for chart', function () {
             Accepted([0, 2, 12, 19, 19]),
             Scope([10, 15, 20, 20, 20])
         ]), {
-            plannedEndDate: new Date("2016-05-16"),
+            targetDate: new Date("2016-05-16"),
             today: new Date("2016-05-12")
         }).toReturn({
                 categories: ['11May16', '12May16', '13May16', '16May16'],

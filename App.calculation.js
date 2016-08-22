@@ -1,5 +1,9 @@
 Ext.define("My.BurnUpCalculation", {
 
+    TARGET_DATE: "Target Date",
+    PROJECTED_DATE: "Projected Date",
+    COMPLETED: "Completed",
+
     /**
      * @param {Object} config
      * @param {Object} data
@@ -17,9 +21,9 @@ Ext.define("My.BurnUpCalculation", {
             maxEndDate: config.maxEndDate,
             iteration: config.iteration,
             auxDates: config.auxDates,
-            plannedEndDate: config.plannedEndDate,
+            targetDate: config.targetDate,
             customStartDate: config.customStartDate,
-            maxDaysAfterPlannedEnd: config.maxDaysAfterPlannedEnd,
+            maxDaysAfterTargetDate: config.maxDaysAfterTargetDate,
             customTrendStartDate: config.customTrendStartDate,
             smallDisplay: config.smallDisplay
         };
@@ -109,56 +113,57 @@ Ext.define("My.BurnUpCalculation", {
         var plannedData = this.getSeriesData(data, "Scope");
         var dates = data.categories;
         var todayIndex = this.findDateIndex(dates, config.today);
-        var plannedEndIndex = this.findDateIndex(dates, this.calcConfig.plannedEndDate);
+        var targetDateIndex = this.findDateIndex(dates, this.calcConfig.targetDate);
         var todayAcceptedPoints = acceptedData[todayIndex];
         var todayPlannedPoints = plannedData[todayIndex];
         var trendStart = this.getTrendStart(dates, acceptedData);
         var trendSeries;
         var completedIndex;
 
-        if (this.calcConfig.plannedEndDate) {
-            var idealData = this.trendData(trendStart.index, trendStart.points, plannedEndIndex, plannedData[plannedEndIndex], plannedEndIndex);
+        if (this.calcConfig.targetDate) {
+            var idealData = this.trendData(trendStart.index, trendStart.points, targetDateIndex, plannedData[targetDateIndex], targetDateIndex);
             this.addSeriesLine(data, "Ideal", idealData, {dashStyle: "Dot"});
-            this.addSubtitleText("Planned End: " + formatDate(this.calcConfig.plannedEndDate));
+            this.addSubtitleText(this.TARGET_DATE + ": " + formatDate(this.calcConfig.targetDate));
         }
-
+        var trendControlIndex = todayIndex;
+        if (todayAcceptedPoints == todayPlannedPoints && todayPlannedPoints > 0) {
+            var k = trendControlIndex - 1;
+            while (acceptedData[k] == todayPlannedPoints || acceptedData[k] === null && plannedData[k] == todayPlannedPoints) {
+                trendControlIndex--;
+                k--;
+            }
+            completedIndex = trendControlIndex;
+        }
         var projectedEndIndex;
-        var projectedDateIndex = this.trendTargetIndex(trendStart.index, trendStart.points, todayIndex, todayAcceptedPoints, todayPlannedPoints);
-        if (projectedDateIndex && todayAcceptedPoints < todayPlannedPoints) {
-            var maxDaysAfterPlannedEnd = this.calcConfig.maxDaysAfterPlannedEnd || 0;
-            var trendEndIndex = Math.min(projectedDateIndex, (plannedEndIndex == -1 ? todayIndex : plannedEndIndex) + maxDaysAfterPlannedEnd);
-            for (var j = Math.max(todayIndex, plannedEndIndex, dates.length - 1); j < trendEndIndex; j++) {
+        var projectedDateIndex = this.trendTargetIndex(trendStart.index, trendStart.points, trendControlIndex, todayAcceptedPoints, todayPlannedPoints);
+        if (projectedDateIndex) {
+            var maxDaysAfterTargetDate = this.calcConfig.maxDaysAfterTargetDate || 0;
+            var trendEndIndex = Math.min(projectedDateIndex, (targetDateIndex == -1 ? trendControlIndex : targetDateIndex) + maxDaysAfterTargetDate);
+            for (var j = Math.max(todayIndex, targetDateIndex, dates.length - 1); j < trendEndIndex; j++) {
                 plannedData.push(todayPlannedPoints);
                 dates.push(dateToIsoString(addBusinessDays(new Date(dates[dates.length - 1]), 1)));
             }
-            trendSeries = this.trendData(trendStart.index, trendStart.points, todayIndex, todayAcceptedPoints, trendEndIndex, todayPlannedPoints);
+            trendSeries = this.trendData(trendStart.index, trendStart.points, trendControlIndex, todayAcceptedPoints, trendEndIndex, todayPlannedPoints);
             this.addSeriesLine(data, "Trend", trendSeries, {dashStyle: "Dash"});
 
             if (projectedDateIndex <= trendEndIndex) {
                 projectedEndIndex = projectedDateIndex;
             }
             this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
-            if (this.projectedEndDate) {
-                this.addSubtitleText("Projected End: " + formatDate(this.projectedEndDate));
+            if (!completedIndex && this.projectedEndDate) {
+                this.addSubtitleText(this.PROJECTED_DATE + ": " + formatDate(this.projectedEndDate));
             }
         }
-        // do not display completed columns after planned end
-        else if (todayAcceptedPoints == todayPlannedPoints && todayPlannedPoints > 0 && todayIndex > plannedEndIndex) {
-            var i = dates.length - 1;
-            while ((acceptedData[i] == todayPlannedPoints || acceptedData[i] === null) && plannedData[i] == todayPlannedPoints && i >= plannedEndIndex) {
-                i--;
-            }
-            completedIndex = i + 1;
-            var spliceIndex = completedIndex + 1;
+        // do not display completed columns after target date
+        if (completedIndex) {
+            var spliceIndex = Math.max(completedIndex, targetDateIndex) + 1;
             var deleteCount = dates.length;
             dates.splice(spliceIndex, deleteCount);
             acceptedData.splice(spliceIndex, deleteCount);
             plannedData.splice(spliceIndex, deleteCount);
             this.getSeriesData(data, "In Progress").splice(spliceIndex, deleteCount);
             this.getSeriesData(data, "Completed").splice(spliceIndex, deleteCount);
-            trendSeries = this.trendData(trendStart.index, trendStart.points, completedIndex, acceptedData[completedIndex], completedIndex, plannedData[completedIndex]);
-            this.addSeriesLine(data, "Trend", trendSeries, {dashStyle: "Dash"});
-            this.addSubtitleText("Completed: " + formatDate(dates[completedIndex]));
+            this.addSubtitleText(this.COMPLETED + ": " + formatDate(dates[completedIndex]));
         }
         this.addPlotLines(dates, projectedEndIndex, completedIndex);
         // ignore too big historical scope for better readability of the chart
@@ -182,12 +187,11 @@ Ext.define("My.BurnUpCalculation", {
             }
         }
         this.addVerticalLine("Today", this.findDateIndex(dates, config.today, true), {color: "#AAA", dashStyle: "ShortDash"});
-        this.addVerticalLine("Planned End", this.findDateIndex(dates, config.plannedEndDate, true));
-        if (projectedEndIndex) {
-            this.addVerticalLine("Projected End", projectedEndIndex, {dashStyle: "ShortDash"});
-        }
+        this.addVerticalLine(this.TARGET_DATE, this.findDateIndex(dates, config.targetDate, true));
         if (completedIndex) {
-            this.addVerticalLine("Completed", completedIndex, {color: "#774"});
+            this.addVerticalLine(this.COMPLETED, completedIndex, {color: "#774"});
+        } else if (projectedEndIndex) {
+            this.addVerticalLine(this.PROJECTED_DATE, projectedEndIndex, {dashStyle: "ShortDash"});
         }
     },
 
