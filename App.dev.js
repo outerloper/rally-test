@@ -93,6 +93,7 @@ window.dev = {
         getMilestoneIds: function () {
             //return [55779773422]; // b
             //return [53884362051]; // 14.3
+            return [60559020830]; // d14.5
             //return [53823409519]; // d15.1
             //return [53823409519, 53823678379]; // d15.1 s15.1
             //return [53823678379]; // s15.1
@@ -104,7 +105,7 @@ window.dev = {
             return []; // from app context
         },
         getReleaseId: function () {
-            return 53630224894; // 002
+            //return 53630224894; // 002
             //return 53630224897; // 003
             //return 53630224900; // 004
             //return 53630224894, 53630224897;

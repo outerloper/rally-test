@@ -208,7 +208,7 @@ Ext.define("My.BurnUpCalculation", {
                     date = addBusinessDays(date, 1);
                     iterationDuration++;
                 }
-                var color = "#FCFDFE";
+                var color = "#F8F9FD";
                 this.chartConfig.xAxis.plotBands = [];
                 do {
                     this.chartConfig.xAxis.plotBands.push({color: color, from: k, to: k + iterationDuration});

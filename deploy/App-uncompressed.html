@@ -35,7 +35,7 @@ function milestoneIcon(milestone) {
 }
 
 function formatMilestone(milestone, context) {
-    return milestoneIcon(milestone) + "<a target='_blank' style='color:#274b6d' href=''" + getMilestoneUrl(milestone, context) + "'>" + milestone.get("Name") + "</a>";
+    return milestoneIcon(milestone) + "<a target='_blank' style='color:#274b6d' href='" + getMilestoneUrl(milestone, context) + "'>" + milestone.get("Name") + "</a>";
 }
 
 function getMilestoneUrl(milestone, context) {
@@ -337,7 +337,7 @@ function addBusinessDays(date, businessDays) {
                     date = addBusinessDays(date, 1);
                     iterationDuration++;
                 }
-                var color = "#FCFDFE";
+                var color = "#F8F9FD";
                 this.chartConfig.xAxis.plotBands = [];
                 do {
                     this.chartConfig.xAxis.plotBands.push({color: color, from: k, to: k + iterationDuration});

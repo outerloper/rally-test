@@ -26,7 +26,7 @@ function milestoneIcon(milestone) {
 }
 
 function formatMilestone(milestone, context) {
-    return milestoneIcon(milestone) + "<a target='_blank' style='color:#274b6d' href=''" + getMilestoneUrl(milestone, context) + "'>" + milestone.get("Name") + "</a>";
+    return milestoneIcon(milestone) + "<a target='_blank' style='color:#274b6d' href='" + getMilestoneUrl(milestone, context) + "'>" + milestone.get("Name") + "</a>";
 }
 
 function getMilestoneUrl(milestone, context) {
