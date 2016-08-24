@@ -66,8 +66,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             label: "Max days to show after Target Date",
             config: Ext.merge(Ext.clone(defaultConfig), {minValue: 0, maxValue: 250})
         });
-        // disabled for now, not sure if needed
-        //settingsFields.push({name: "customTitle", xtype: "textfield", label: "Custom chart title", config: Ext.merge({}, defaultConfig, {width: 400})});
         settingsFields.push({name: "projectTargetPage", xtype: "textfield", label: "When clicking on project name go to page...", config: defaultConfig});
         settingsFields.push({
             name: "markAuxDates",
@@ -75,7 +73,30 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             label: "This checkbox enables marking auxiliary dates on the chart. Specify such dates in the Milestone's Notes field - e.g.<br/>'2017-05-14 Code Complete', each entry in separate line.",
             config: checkboxConfig
         });
-        settingsFields.push({name: "smallDisplay", xtype: "rallycheckboxfield", label: "Adjust chart to small display", config: checkboxConfig});
+        settingsFields.push({name: "drawIterations", xtype: "rallycheckboxfield", label: "Draw iteration bounds in background", config: checkboxConfig});
+        settingsFields.push({
+            name: "displayWidth",
+            xtype: "combobox",
+            label: "Display width %, decrease it to fit small display area",
+            store: Ext.create('Ext.data.Store', {
+                fields: ['value'],
+                data: [{value: 100}, {value: 50}, {value: 30}]
+            }),
+            queryMode: "local",
+            displayField: "value",
+            valueField: "value",
+            config: defaultConfig,
+            validator: function (value) {
+                if (isNaN(value)) {
+                    return "Number expected";
+                }
+                var MIN = 20, MAX = 200;
+                if (value < MIN || value > MAX) {
+                    return "Value out of allowed range (" + MIN + "-" + MAX + ")";
+                }
+                return true;
+            }
+        });
         return settingsFields;
     },
 
@@ -83,7 +104,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         defaultSettings: {
             maxDaysAfterTargetDate: 45,
             markAuxDates: true,
-            projectTargetPage: "iterationstatus"
+            projectTargetPage: "iterationstatus",
+            displayWidth: 100,
+            drawIterations: true
         }
     },
 
@@ -199,7 +222,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         var app = this;
         return Ext.create("Rally.ui.chart.Chart", {
             itemId: "chart",
-            chartColors: ["#B4F4D9", "#9FDDA7", "#6DBD44", app.scopeColor, "#000", "#000"], // in progress, compeleted, accepted, planned, trend, ideal
+            chartColors: ["#B4F4D9", "#9FDDA7", "#6DBD44", app.scopeColor, "#000", "#000"], // in progress, completed, accepted, planned, trend, ideal
             chartConfig: {
                 title: {text: "Milestone"},
                 chart: {zoomType: "xy"},
@@ -222,7 +245,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     },
                     column: {
                         pointPadding: 0,
-                        groupPadding: 0.15,
                         stacking: true
                     },
                     area: {
@@ -346,10 +368,11 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     targetDate: targetDate,
                     iteration: this.iteration,
                     auxDates: this.getAuxDates(milestones),
+                    drawIterations: this.getSetting("drawIterations"),
                     customStartDate: this.getSetting("customStartDate"),
                     customTrendStartDate: this.getSetting("customTrendStartDate"),
                     maxDaysAfterTargetDate: maxDaysAfterTargetDate,
-                    smallDisplay: this.getSetting("smallDisplay")
+                    displayWidth: this.getSetting("displayWidth")
                 }
             },
 

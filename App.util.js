@@ -93,15 +93,19 @@ function joinNotEmpty(array, glue, prefixIfNotEmpty, suffixIfNotEmpty) {
 
 function addBusinessDays(date, businessDays) {
     var result = new Date(date);
-    var days = result.getDate();
-    var d = result.getDay();
-    while (businessDays > 0) {
-        ++days;
-        d = (d + 1) % 7;
-        if (d !== 0 && d != 6) {
-            --businessDays;
+    if (businessDays) {
+        var days = result.getDate();
+        var d = result.getDay();
+        var step = businessDays > 0 ? 1 : -1;
+        var weekDayStep = businessDays > 0 ? 1 : 6;
+        while (businessDays !== 0) {
+            days += step;
+            d = (d + weekDayStep) % 7;
+            if (d !== 0 && d != 6) {
+                businessDays -= step;
+            }
         }
+        result.setDate(days);
     }
-    result.setDate(days);
     return result;
 }

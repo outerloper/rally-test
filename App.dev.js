@@ -70,10 +70,10 @@ window.dev = {
             defaultSettings: {
                 //customTrendStartDate: "2016-03-01",
                 //customStartDate: "2016-05-05",
-                maxDaysAfterTargetDate: 130,
-                //customTitle: "XXX",
+                maxDaysAfterTargetDate: 0,
                 markAuxDates: true,
-                smallDisplay: false,
+                drawIterations: false,
+                displayWidth: 50,
                 //project: "/project/52219765529", // csm
                 //project: "/project/52953911025", // fm
                 //project: "/project/52220062189", // pm

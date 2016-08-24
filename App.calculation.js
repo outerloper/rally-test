@@ -21,11 +21,12 @@ Ext.define("My.BurnUpCalculation", {
             maxEndDate: config.maxEndDate,
             iteration: config.iteration,
             auxDates: config.auxDates,
+            drawIterations: config.drawIterations,
             targetDate: config.targetDate,
             customStartDate: config.customStartDate,
             maxDaysAfterTargetDate: config.maxDaysAfterTargetDate,
             customTrendStartDate: config.customTrendStartDate,
-            smallDisplay: config.smallDisplay
+            displayWidth: config.displayWidth
         };
 
         this.chartConfig = {
@@ -174,7 +175,9 @@ Ext.define("My.BurnUpCalculation", {
         if (maxPlannedPoints > yMax) {
             this.chartConfig.yAxis.max = yMax;
         }
-        this.addIterationsBands(dates);
+        if (config.drawIterations) {
+            this.addIterationsBands(dates);
+        }
     },
 
     addPlotLines: function (dates, projectedEndIndex, completedIndex) {
@@ -199,24 +202,35 @@ Ext.define("My.BurnUpCalculation", {
         var config = this.calcConfig;
         var iterationStartDate = config.iteration.get("StartDate");
         var iterationEndDate = config.iteration.get("EndDate");
-        var iterationStartDayOfWeek = iterationStartDate.getDay();
-        for (var k = 0; k < dates.length; k++) {
-            if (new Date(dates[k]).getDay() == iterationStartDayOfWeek) {
-                var iterationDuration = 0;
-                var date = iterationStartDate;
-                while (date < iterationEndDate) {
-                    date = addBusinessDays(date, 1);
-                    iterationDuration++;
-                }
-                var color = "#F8F9FD";
-                this.chartConfig.xAxis.plotBands = [];
-                do {
-                    this.chartConfig.xAxis.plotBands.push({color: color, from: k, to: k + iterationDuration});
-                    k += iterationDuration * 2;
-                } while (k < dates.length);
-                break;
-            }
+        var iterationDuration = 0;
+        var date = iterationStartDate;
+        while (date < iterationEndDate) {
+            date = addBusinessDays(date, 1);
+            iterationDuration++;
         }
+        var band = true;
+        var startDate = iterationStartDate;
+        while (dateToIsoString(startDate) > dates[0]) {
+            startDate = addBusinessDays(startDate, -iterationDuration);
+            band = !band;
+        }
+        do {
+            startDate = addBusinessDays(startDate, iterationDuration);
+            band = !band;
+        } while (dateToIsoString(startDate) < dates[0]);
+
+        var startIndex = this.findDateIndex(dates, startDate);
+        if (startIndex == -1) {
+            return;
+        }
+
+        var color = "#F8F9FD";
+        this.chartConfig.xAxis.plotBands = [];
+        var i = startIndex - (band ? iterationDuration : 0);
+        do {
+            this.chartConfig.xAxis.plotBands.push({color: color, from: Math.max(0, i), to: i + iterationDuration});
+            i += iterationDuration * 2;
+        } while (i < dates.length);
     },
 
 
@@ -261,18 +275,26 @@ Ext.define("My.BurnUpCalculation", {
         data.categories = data.categories.map(function (date) {
             return formatDate(date);
         });
-        var threshold = data.categories.length * (this.calcConfig.smallDisplay ? 2 : 1);
-        var step, lineWidth, groupPadding;
-        if (threshold > 240) {
+        var displayWidth = Math.max(Math.min(+this.calcConfig.displayWidth || 100, 500), 10);
+        var threshold = data.categories.length * (100 / displayWidth);
+        var step, lineWidth, groupPadding, markerEnabled;
+        if (threshold > 360) {
+            groupPadding = 0;
+            lineWidth = 3;
+            step = 30;
+        } else if (threshold > 240) {
             groupPadding = 0.05;
-            lineWidth = 2;
+            lineWidth = 3;
             step = 20;
         } else if (threshold > 120) {
             groupPadding = 0.1;
             lineWidth = 3;
             step = 10;
         } else {
-            return;
+            groupPadding = 0.15;
+            markerEnabled = true;
+            lineWidth = 3;
+            step = 5;
         }
         Ext.merge(this.chartConfig, {
             xAxis: {
@@ -282,6 +304,7 @@ Ext.define("My.BurnUpCalculation", {
             },
             plotOptions: {
                 line: {
+                    marker: {enabled: markerEnabled},
                     lineWidth: lineWidth
                 },
                 column: {

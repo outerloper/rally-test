@@ -102,16 +102,20 @@ function joinNotEmpty(array, glue, prefixIfNotEmpty, suffixIfNotEmpty) {
 
 function addBusinessDays(date, businessDays) {
     var result = new Date(date);
-    var days = result.getDate();
-    var d = result.getDay();
-    while (businessDays > 0) {
-        ++days;
-        d = (d + 1) % 7;
-        if (d !== 0 && d != 6) {
-            --businessDays;
+    if (businessDays) {
+        var days = result.getDate();
+        var d = result.getDay();
+        var step = businessDays > 0 ? 1 : -1;
+        var weekDayStep = businessDays > 0 ? 1 : 6;
+        while (businessDays !== 0) {
+            days += step;
+            d = (d + weekDayStep) % 7;
+            if (d !== 0 && d != 6) {
+                businessDays -= step;
+            }
         }
+        result.setDate(days);
     }
-    result.setDate(days);
     return result;
 }
 
@@ -138,11 +142,12 @@ function addBusinessDays(date, businessDays) {
             maxEndDate: config.maxEndDate,
             iteration: config.iteration,
             auxDates: config.auxDates,
+            drawIterations: config.drawIterations,
             targetDate: config.targetDate,
             customStartDate: config.customStartDate,
             maxDaysAfterTargetDate: config.maxDaysAfterTargetDate,
             customTrendStartDate: config.customTrendStartDate,
-            smallDisplay: config.smallDisplay
+            displayWidth: config.displayWidth
         };
 
         this.chartConfig = {
@@ -291,7 +296,9 @@ function addBusinessDays(date, businessDays) {
         if (maxPlannedPoints > yMax) {
             this.chartConfig.yAxis.max = yMax;
         }
-        this.addIterationsBands(dates);
+        if (config.drawIterations) {
+            this.addIterationsBands(dates);
+        }
     },
 
     addPlotLines: function (dates, projectedEndIndex, completedIndex) {
@@ -316,24 +323,35 @@ function addBusinessDays(date, businessDays) {
         var config = this.calcConfig;
         var iterationStartDate = config.iteration.get("StartDate");
         var iterationEndDate = config.iteration.get("EndDate");
-        var iterationStartDayOfWeek = iterationStartDate.getDay();
-        for (var k = 0; k < dates.length; k++) {
-            if (new Date(dates[k]).getDay() == iterationStartDayOfWeek) {
-                var iterationDuration = 0;
-                var date = iterationStartDate;
-                while (date < iterationEndDate) {
-                    date = addBusinessDays(date, 1);
-                    iterationDuration++;
-                }
-                var color = "#F8F9FD";
-                this.chartConfig.xAxis.plotBands = [];
-                do {
-                    this.chartConfig.xAxis.plotBands.push({color: color, from: k, to: k + iterationDuration});
-                    k += iterationDuration * 2;
-                } while (k < dates.length);
-                break;
-            }
+        var iterationDuration = 0;
+        var date = iterationStartDate;
+        while (date < iterationEndDate) {
+            date = addBusinessDays(date, 1);
+            iterationDuration++;
         }
+        var band = true;
+        var startDate = iterationStartDate;
+        while (dateToIsoString(startDate) > dates[0]) {
+            startDate = addBusinessDays(startDate, -iterationDuration);
+            band = !band;
+        }
+        do {
+            startDate = addBusinessDays(startDate, iterationDuration);
+            band = !band;
+        } while (dateToIsoString(startDate) < dates[0]);
+
+        var startIndex = this.findDateIndex(dates, startDate);
+        if (startIndex == -1) {
+            return;
+        }
+
+        var color = "#F8F9FD";
+        this.chartConfig.xAxis.plotBands = [];
+        var i = startIndex - (band ? iterationDuration : 0);
+        do {
+            this.chartConfig.xAxis.plotBands.push({color: color, from: Math.max(0, i), to: i + iterationDuration});
+            i += iterationDuration * 2;
+        } while (i < dates.length);
     },
 
 
@@ -378,18 +396,26 @@ function addBusinessDays(date, businessDays) {
         data.categories = data.categories.map(function (date) {
             return formatDate(date);
         });
-        var threshold = data.categories.length * (this.calcConfig.smallDisplay ? 2 : 1);
-        var step, lineWidth, groupPadding;
-        if (threshold > 240) {
+        var displayWidth = Math.max(Math.min(+this.calcConfig.displayWidth || 100, 500), 10);
+        var threshold = data.categories.length * (100 / displayWidth);
+        var step, lineWidth, groupPadding, markerEnabled;
+        if (threshold > 360) {
+            groupPadding = 0;
+            lineWidth = 3;
+            step = 30;
+        } else if (threshold > 240) {
             groupPadding = 0.05;
-            lineWidth = 2;
+            lineWidth = 3;
             step = 20;
         } else if (threshold > 120) {
             groupPadding = 0.1;
             lineWidth = 3;
             step = 10;
         } else {
-            return;
+            groupPadding = 0.15;
+            markerEnabled = true;
+            lineWidth = 3;
+            step = 5;
         }
         Ext.merge(this.chartConfig, {
             xAxis: {
@@ -399,6 +425,7 @@ function addBusinessDays(date, businessDays) {
             },
             plotOptions: {
                 line: {
+                    marker: {enabled: markerEnabled},
                     lineWidth: lineWidth
                 },
                 column: {
@@ -517,8 +544,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             label: "Max days to show after Target Date",
             config: Ext.merge(Ext.clone(defaultConfig), {minValue: 0, maxValue: 250})
         });
-        // disabled for now, not sure if needed
-        //settingsFields.push({name: "customTitle", xtype: "textfield", label: "Custom chart title", config: Ext.merge({}, defaultConfig, {width: 400})});
         settingsFields.push({name: "projectTargetPage", xtype: "textfield", label: "When clicking on project name go to page...", config: defaultConfig});
         settingsFields.push({
             name: "markAuxDates",
@@ -526,7 +551,30 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             label: "This checkbox enables marking auxiliary dates on the chart. Specify such dates in the Milestone's Notes field - e.g.<br/>'2017-05-14 Code Complete', each entry in separate line.",
             config: checkboxConfig
         });
-        settingsFields.push({name: "smallDisplay", xtype: "rallycheckboxfield", label: "Adjust chart to small display", config: checkboxConfig});
+        settingsFields.push({name: "drawIterations", xtype: "rallycheckboxfield", label: "Draw iteration bounds in background", config: checkboxConfig});
+        settingsFields.push({
+            name: "displayWidth",
+            xtype: "combobox",
+            label: "Display width %, decrease it to fit small display area",
+            store: Ext.create('Ext.data.Store', {
+                fields: ['value'],
+                data: [{value: 100}, {value: 50}, {value: 30}]
+            }),
+            queryMode: "local",
+            displayField: "value",
+            valueField: "value",
+            config: defaultConfig,
+            validator: function (value) {
+                if (isNaN(value)) {
+                    return "Number expected";
+                }
+                var MIN = 20, MAX = 200;
+                if (value < MIN || value > MAX) {
+                    return "Value out of allowed range (" + MIN + "-" + MAX + ")";
+                }
+                return true;
+            }
+        });
         return settingsFields;
     },
 
@@ -534,7 +582,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         defaultSettings: {
             maxDaysAfterTargetDate: 45,
             markAuxDates: true,
-            projectTargetPage: "iterationstatus"
+            projectTargetPage: "iterationstatus",
+            displayWidth: 100,
+            drawIterations: true
         }
     },
 
@@ -650,7 +700,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         var app = this;
         return Ext.create("Rally.ui.chart.Chart", {
             itemId: "chart",
-            chartColors: ["#B4F4D9", "#9FDDA7", "#6DBD44", app.scopeColor, "#000", "#000"], // in progress, compeleted, accepted, planned, trend, ideal
+            chartColors: ["#B4F4D9", "#9FDDA7", "#6DBD44", app.scopeColor, "#000", "#000"], // in progress, completed, accepted, planned, trend, ideal
             chartConfig: {
                 title: {text: "Milestone"},
                 chart: {zoomType: "xy"},
@@ -673,7 +723,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     },
                     column: {
                         pointPadding: 0,
-                        groupPadding: 0.15,
                         stacking: true
                     },
                     area: {
@@ -797,10 +846,11 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     targetDate: targetDate,
                     iteration: this.iteration,
                     auxDates: this.getAuxDates(milestones),
+                    drawIterations: this.getSetting("drawIterations"),
                     customStartDate: this.getSetting("customStartDate"),
                     customTrendStartDate: this.getSetting("customTrendStartDate"),
                     maxDaysAfterTargetDate: maxDaysAfterTargetDate,
-                    smallDisplay: this.getSetting("smallDisplay")
+                    displayWidth: this.getSetting("displayWidth")
                 }
             },
 
