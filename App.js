@@ -205,7 +205,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 return [
                     metric("In Progress", ["In-Progress"]),
                     metric("Completed", ["Completed"]),
-                    metric("Accepted", ["Accepted", "Released"]),
+                    metric("Accepted", ["Accepted", "Released-to-Production"]),
                     {as: "Scope", f: "sum", field: "PlanEstimate", display: "line"}
                 ];
             },
@@ -332,16 +332,17 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         var storeConfig = {
             listeners: {
                 load: function (store, data, success) {
-                    // printStoreData(data, ["_ValidFrom", "_ValidTo", "FormattedID", "PlanEstimate", "ScheduleState"]);
+                    printStoreData(data, ["_ValidFrom", "_ValidTo", "FormattedID", "PlanEstimate", "ScheduleState", "Name"]);
                 }
             },
             find: {
                 _ProjectHierarchy: this.projectId,
                 _TypeHierarchy: {$in: ["Defect", "HierarchicalRequirement"]},
                 _ItemHierarchy: {$in: artifactIds},
-                Children: null
+                Children: null,
+                _ValidTo: "9999-01-01T00:00:00.000Z"
             },
-            fetch: ["PlanEstimate", "ScheduleState", "FormattedID"],
+            fetch: ["PlanEstimate", "ScheduleState", "FormattedID", "Name"],
             hydrate: ["ScheduleState"],
             sort: {_ValidFrom: 1}, // 1 = ASC
             limit: Infinity,

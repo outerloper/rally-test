@@ -1,3 +1,30 @@
+/**
+ * @param {Array} data Array of objects returned by Store object
+ * @param {Array} columns If present, returns values only for specified columns, in the provided order. If value is an object, use dot notation to access its property.
+ * @returns {string} Lines of tab-separated values
+ */
+function storeDataToString(data, columns) {
+    if (!data || !data[0] || !data[0].raw) {
+        return "No data to display: " + data;
+    }
+    var actualColumns = columns || Object.keys(data[0].raw);
+    var keys = actualColumns.map(function (column) {
+        return column.split('.');
+    });
+    return data.reduce(function (result, row) {
+        result.push(keys.map(function (key) {
+            var value = row.raw[key[0]];
+            return "" + value == "[object Object]" && key[1] ? value[key[1]] : value;
+        }).join('\t'));
+        return result;
+    }, [actualColumns.join('\t') + '\t' + data.length]).join('\n');
+}
+
+function printStoreData(data, columns)
+{
+    console.debug(storeDataToString(data, columns));
+}
+
 function resolvedPromise(value) {
     return Deft.promise.Promise.when(value);
 }

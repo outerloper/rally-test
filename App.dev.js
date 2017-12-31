@@ -1,31 +1,6 @@
 // code used in development and testing
 
-/**
- * @param {Array} data Array of objects returned by Store object
- * @param {Array} columns If present, returns values only for specified columns, in the provided order. If value is an object, use dot notation to access its property.
- * @returns {string} Lines of tab-separated values
- */
-function storeDataToString(data, columns) {
-    if (!data || !data[0] || !data[0].raw) {
-        return "No data to display: " + data;
-    }
-    var actualColumns = columns || Object.keys(data[0].raw);
-    var keys = actualColumns.map(function (column) {
-        return column.split('.');
-    });
-    return data.reduce(function (result, row) {
-        result.push(keys.map(function (key) {
-            var value = row.raw[key[0]];
-            return "" + value == "[object Object]" && key[1] ? value[key[1]] : value;
-        }).join('\t'));
-        return result;
-    }, [actualColumns.join('\t') + '\t' + data.length]).join('\n');
-}
 
-function printStoreData(data, columns)
-{
-    dev && console.debug(storeDataToString(data, columns));
-}
 
 function chartData(dateFrom, days, series) {
     var data = {categories: [], series: series};
@@ -77,7 +52,8 @@ window.dev = {
                 //project: "/project/52219765529", // csm
                 //project: "/project/52953911025", // fm
                 //project: "/project/52220062189", // pm
-                project: "/project/52220062990", // sm
+                // project: "/project/52220062990", // sm
+                project: "/project/52121885700", // FPM Charlie
                 //project: "/project/53630224881", // smk
                 //project: "/project/53630226508", // smd
                 //project: "/project/52219769418", // slm
@@ -94,7 +70,8 @@ window.dev = {
             //return [55779773422]; // b
             //return [53884362051]; // 14.3
             //return [60559020830]; // d14.5
-            return [53823409519]; // d15.1
+            // return [53823409519]; // d15.1
+            return [58358658496]; // AC-FPM 4.12.3
             //return [53823409519, 53823678379]; // d15.1 s15.1
             //return [53823678379]; // s15.1
             //return [55681896657]; // d15.2
@@ -102,7 +79,7 @@ window.dev = {
             //return [53888803641]; // d16.0
             //return [49774672980]; // css/int/rel7.3
             //return [53823409519, 53823678379];
-            return []; // from app context
+            // return []; // from app context
         },
         _getDataForChart: function () { // put/remove underscore (_getDataForChart/getDataForChart) to disable/enable this mocked data for chart
             this.setDataLoaded(true);
