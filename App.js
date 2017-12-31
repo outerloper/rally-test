@@ -59,7 +59,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             },
             config: defaultConfig
         });
-        settingsFields.push({name: "teamFeatures", xtype: "textfield", label: "Team Features (list of TF00000's)", config: defaultConfig});
+        settingsFields.push({name: "teamFeatures", xtype: "textfield", label: "Team Features (list of IDs)", config: defaultConfig});
         settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until...", config: defaultConfig});
         settingsFields.push({name: "customTrendStartDate", xtype: "rallydatefield", label: "Custom Trend line start", config: defaultConfig});
         settingsFields.push({
@@ -98,6 +98,12 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 }
                 return true;
             }
+        });
+        settingsFields.push({
+            name: "debug",
+            xtype: "rallycheckboxfield",
+            label: "Debug mode (prints diagnostic information in JS console)",
+            config: checkboxConfig
         });
         return settingsFields;
     },
@@ -355,7 +361,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     },
 
     getConfigForChart: function (artifactIds, milestones, teamFeatures) {
-        var teamFeatureIds = teamFeatures.map(function(teamFeature) {
+        var teamFeatureIds = teamFeatures.map(function (teamFeature) {
             return +teamFeature.get("ObjectID");
         });
         var query = {
@@ -368,15 +374,22 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             query.ObjectID = {$in: artifactIds};
             query._ItemHierarchy = {$in: teamFeatureIds};
         }
+        var fetchFields = ["_ValidFrom", "_ValidTo", "ObjectID", "FormattedID", "PlanEstimate", "ScheduleState"];
+        var troubleshooting = this.getSetting("debug");
         var storeConfig = {
             listeners: {
                 load: function (store, data, success) {
-                    printStoreData(data, ["_ValidFrom", "_ValidTo", "FormattedID", "PlanEstimate", "ScheduleState", "Name"]);
+                    if (troubleshooting) {
+                        console.debug("[DEBUG] Data snapshots for chart START:");
+                        printStoreData(data, fetchFields);
+                        console.debug("[DEBUG] Data snapshots for chart END.");
+                    }
                 }
             },
             find: query,
-            fetch: ["PlanEstimate", "ScheduleState", "FormattedID", "Name"],
+            fetch: fetchFields,
             hydrate: ["ScheduleState"],
+            compress: true,
             sort: {_ValidFrom: 1}, // 1 = ASC
             limit: Infinity,
             removeUnauthorizedSnapshots: true,

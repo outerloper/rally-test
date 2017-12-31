@@ -65,8 +65,9 @@ window.dev = {
                 // teamFeatures: "TF10560, TF15110", // 15.2
                 // teamFeatures: "TF13374, TF13360, TF18854, TF19226, TF13393, TF13397", // 16.0
                 // teamFeatures: "77426086652, 59291054867, 59287501066, 59286613915, 59284079199, 80859898716", // 16.0
-                // teamFeatures: "TF29957, TF29959, TF28954", // 16.2
-                teamFeatures: "NON_EX", // non existing
+                teamFeatures: "TF29957, TF29959, TF28954", // 16.2
+                // teamFeatures: "NON_EX", // non existing
+                debug: true,
                 xxxx: null
             }
         },
@@ -79,11 +80,11 @@ window.dev = {
             // return [58358658496]; // AC-FPM 4.12.3
             //return [53823409519, 53823678379]; // d15.1 s15.1
             //return [53823678379]; // s15.1
-            return [55681896657]; // d15.2
+            // return [55681896657]; // d15.2
             //return [55692822039]; // d15.3
             // return [53888803641]; // d16.0
             // return [77427327504]; // s16.0
-            // return [130767064724]; // d16.2
+            return [130767064724]; // d16.2
             //return [49774672980]; // css/int/rel7.3
             //return [53823409519, 53823678379];
             // return []; // from app context
@@ -143,5 +144,3 @@ window.dev = {
         }
     }
 };
-
-debug = true;

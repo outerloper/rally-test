@@ -20,8 +20,7 @@ function storeDataToString(data, columns) {
     }, [actualColumns.join('\t') + '\t' + data.length]).join('\n');
 }
 
-function printStoreData(data, columns)
-{
+function printStoreData(data, columns) {
     console.debug(storeDataToString(data, columns));
 }
 
@@ -70,7 +69,7 @@ function formatTeamFeature(teamFeature, context) {
         teamFeature.get("FormattedID") + "</strong> " + teamFeature.get("Name") + "</a>";
 }
 
-function  getTeamFeatureUrl(teamFeature, context) {
+function getTeamFeatureUrl(teamFeature, context) {
     return "https://rally1.rallydev.com/#/" + context.getProject().ObjectID + "d/detail" + teamFeature.getUri() + "/userstories";
 }
 
