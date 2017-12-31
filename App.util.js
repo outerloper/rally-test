@@ -65,6 +65,15 @@ function formatProject(project, page) {
         : project.get("Name");
 }
 
+function formatTeamFeature(teamFeature, context) {
+    return "<a target='_blank' style='color:#274b6d' href='" + getTeamFeatureUrl(teamFeature, context) + "'><strong style='font-size:0.95em'>" +
+        teamFeature.get("FormattedID") + "</strong> " + teamFeature.get("Name") + "</a>";
+}
+
+function  getTeamFeatureUrl(teamFeature, context) {
+    return "https://rally1.rallydev.com/#/" + context.getProject().ObjectID + "d/detail" + teamFeature.getUri() + "/userstories";
+}
+
 function hasOwnProperties(object, minNumber) {
     minNumber = minNumber ? minNumber : 1;
     for (var property in object) {
@@ -108,13 +117,11 @@ function dateToIsoString(date) {
     return date.toISOString().substring(0, 10);
 }
 
-function joinNotEmpty(array, glue, prefixIfNotEmpty, suffixIfNotEmpty) {
-    var joined = array.filter(function (element) {
-        return !!element;
-    }).join(glue);
-    var prefix = prefixIfNotEmpty ? prefixIfNotEmpty : "";
-    var suffix = suffixIfNotEmpty ? suffixIfNotEmpty : "";
-    return joined && (prefix || suffix) ? prefix + joined + suffix : joined;
+function chainedExpression(operator, expressions) {
+    var joined = expressions.filter(function (expression) {
+        return !!expression;
+    }).join(") " + operator + " (");
+    return "((" + joined + "))";
 }
 
 
