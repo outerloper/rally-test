@@ -43,11 +43,13 @@ window.dev = {
     app: {
         config: {
             defaultSettings: {
+                capacityPlan: "1 2017-12-10 2 2017-12-20 0 2018-01-02 4",
                 //customTrendStartDate: "2016-03-01",
+                // customTrendStartDate: "2017-11-27",
                 //customStartDate: "2016-05-05",
                 maxDaysAfterTargetDate: 0,
                 markAuxDates: true,
-                drawIterations: false,
+                drawIterations: true,
                 displayWidth: 50,
                 //project: "/project/52219765529", // csm
                 //project: "/project/52953911025", // fm
@@ -65,7 +67,8 @@ window.dev = {
                 // teamFeatures: "TF10560, TF15110", // 15.2
                 // teamFeatures: "TF13374, TF13360, TF18854, TF19226, TF13393, TF13397", // 16.0
                 // teamFeatures: "77426086652, 59291054867, 59287501066, 59286613915, 59284079199, 80859898716", // 16.0
-                teamFeatures: "TF29957, TF29959, TF28954", // 16.2
+                // teamFeatures: "TF29957, TF29959, TF28954", // 16.2
+                teamFeatures: "29957 29959;tf28954", // 16.2
                 // teamFeatures: "NON_EX", // non existing
                 debug: true,
                 xxxx: null

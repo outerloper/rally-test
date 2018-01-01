@@ -17,8 +17,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
 
     getSettingsFields: function () {
         var milestones = this.getSetting("milestones");
-        var defaultConfig = {labelWidth: 170, labelAlign: "right"};
-        var checkboxConfig = {labelWidth: 360};
+        var defaultConfig = {width: 400, labelWidth: 210, labelAlign: "right"};
+        var checkboxConfig = {labelWidth: 380};
         var currentProjectText = "-- Current Project --";
         var contextTimebox = this.getContextTimebox();
         var settingsFields = [];
@@ -33,7 +33,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             hideLabel: false,
             autoSelect: false,
             disabled: getRallyRecordType(contextTimebox) == "milestone",
-            forceSelection: "string" != typeof milestones || milestones.indexOf(",") < 0 // workaround for bug (?) in combo when multiple selection is not repopulated
+            forceSelection: "string" != typeof milestones || milestones.indexOf(",") < 0 // workaround for a bug (?) in combo when multiple selection is not repopulated
         });
 
         settingsFields.push({html: "<h3>Additional options</h3>", xtype: "label"});
@@ -59,27 +59,41 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             },
             config: defaultConfig
         });
-        settingsFields.push({name: "teamFeatures", xtype: "textfield", label: "Team Features (list of IDs)", config: defaultConfig});
-        settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until...", config: defaultConfig});
-        settingsFields.push({name: "customTrendStartDate", xtype: "rallydatefield", label: "Custom Trend line start", config: defaultConfig});
+        settingsFields.push({name: "teamFeatures", xtype: "textfield", label: "Take only these Team Features: (IDs)", config: defaultConfig});
+        settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until:", config: defaultConfig});
+        settingsFields.push({name: "customTrendStartDate", xtype: "rallydatefield", label: "Start projection lines from:", config: defaultConfig});
         settingsFields.push({
             name: "maxDaysAfterTargetDate",
             xtype: "rallynumberfield",
             label: "Max days to show after Target Date",
             config: Ext.merge(Ext.clone(defaultConfig), {minValue: 0, maxValue: 250})
         });
-        settingsFields.push({name: "projectTargetPage", xtype: "textfield", label: "When clicking on project name go to page...", config: defaultConfig});
+        settingsFields.push({
+            name: "capacityPlan",
+            xtype: "textarea",
+            label: "Model projection lines with a specific capacity plan (provide average daily capacity values separated by the dates when they change &ndash; <abbr title='" +
+            "To express that team capacity is 3 before September, in September&#013;it is going to be doubled and later it is to be 2.5, you would write:&#013;&#013;3 2018-09-01 6 2018-10-01 2.5'>example</abbr>)",
+            height: 55,
+            config: defaultConfig
+        });
+        settingsFields.push({name: "projectTargetPage", xtype: "textfield", label: "When clicking on a project name, open this page:", config: defaultConfig});
         settingsFields.push({
             name: "markAuxDates",
             xtype: "rallycheckboxfield",
-            label: "This checkbox enables marking auxiliary dates on the chart. Specify such dates in the Milestone's Notes field - e.g.<br/>'2017-05-14 Code Complete', each entry in separate line.",
+            label: "Mark additional key dates on the chart (such dates must be specified in the Milestone's Notes field &ndash; <abbr title='" +
+            "To express that your Code Complete date is on Dec 10&#013;and RC Build is planned on Jan 15, you would write:&#013;&#013;2018-12-10 Code Complete&#013;2019-01-15 RC Build'>example</abbr>)",
             config: checkboxConfig
         });
-        settingsFields.push({name: "drawIterations", xtype: "rallycheckboxfield", label: "Draw iteration bounds in background", config: checkboxConfig});
+        settingsFields.push({
+            name: "drawIterations",
+            xtype: "rallycheckboxfield",
+            label: "Draw iteration boundaries on chart's background",
+            config: checkboxConfig
+        });
         settingsFields.push({
             name: "displayWidth",
             xtype: "combobox",
-            label: "Display width %, decrease it to fit small display area",
+            label: "Display width %, decrease it to fix chart look in a small display area",
             store: Ext.create('Ext.data.Store', {
                 fields: ['value'],
                 data: [{value: 100}, {value: 50}, {value: 30}]
@@ -102,7 +116,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         settingsFields.push({
             name: "debug",
             xtype: "rallycheckboxfield",
-            label: "Debug mode (prints diagnostic information in JS console)",
+            label: "Debug mode (prints diagnostic information in JavaScript console)",
             config: checkboxConfig
         });
         return settingsFields;
@@ -139,7 +153,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         if (!teamFeatures) {
             return [];
         }
-        return teamFeatures.toString().split(/\s*[,;\s]\s*/);
+        return teamFeatures.toString().split(/\s*[,;\s]\s*/).map(function (id) {
+            return id.match(/^\d+$/) ? "TF" + id : id.toUpperCase();
+        });
     },
 
     setDataLoading: function (loading) {
@@ -175,7 +191,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     onTimeboxScopeChange: function (timeboxScope) {
         var timebox = timeboxScope.getRecord();
         var timeboxType = getRallyRecordType(timebox);
-        if (timeboxType == "milestone") {
+        if (timeboxType === "milestone") {
             this.setContextTimebox(timeboxScope);
             var settings = {milestones: [timebox.get("_ref")]};
             Rally.data.PreferenceManager.update({
@@ -414,6 +430,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     maxEndDate: endDate,
                     targetDate: targetDate,
                     iteration: this.iteration,
+                    capacityPlan: this.getSetting("capacityPlan"),
                     auxDates: this.getAuxDates(milestones),
                     drawIterations: this.getSetting("drawIterations"),
                     customStartDate: this.getSetting("customStartDate"),
