@@ -30,6 +30,14 @@ Ext.define("My.BurnUpCalculation", {
             displayWidth: config.displayWidth
         };
 
+        var tooltipStructure = {
+            "Scope": {position: 0},
+            "Not Started": {position: 1},
+            "In Progress": {position: 2},
+            "Completed": {position: 3},
+            "Accepted": {position: 4}
+        };
+
         this.chartConfig = {
             xAxis: {
                 plotLines: []
@@ -37,6 +45,58 @@ Ext.define("My.BurnUpCalculation", {
             yAxis: {},
             subtitle: {
                 useHTML: true
+            },
+            tooltip: {
+                formatter: function () {
+                    var model = {
+                        categories: [],
+                        get: function (series) {
+                            return model.categories[tooltipStructure[series].position];
+                        },
+                        set: function (series, object) {
+                            model.categories[tooltipStructure[series].position] = object;
+                        }
+                    };
+                    this.points.forEach(function (p) {
+                        model.set(p.series.name, {value: p.y, name: p.series.name, color: p.series.color});
+                    });
+                    if (model.get("Scope")) {
+                        if (model.get("In Progress") && model.get("Completed") && model.get("Accepted")) {
+                            model.set("Not Started", {
+                                value: model.get("Scope").value - model.get("In Progress").value - model.get("Completed").value - model.get("Accepted").value,
+                                name: "Not Started",
+                                color: "#CFCFCF"
+                            });
+                        }
+                    }
+                    model.categories.forEach(function (category) {
+                        category.valueWholePart = Math.floor(category.value);
+                        category.valueDecimalPart = Math.floor(Math.round((category.value - category.valueWholePart) * 10));
+                        if (category.valueDecimalPart) {
+                            model.isValueDecimalPart = true;
+                        }
+                        if (model.get("Scope")) {
+                            var perMil = Math.round(category.value / model.get("Scope").value * 1000);
+                            var percentWholePart = Math.floor(perMil / 10);
+                            category.percent = percentWholePart + "." + Math.floor(Math.round((perMil - percentWholePart * 10))) + "%";
+                        }
+                    });
+                    var tooltip = "<table style='border-spacing: 1ex 0'><caption>" + this.x + "</caption>";
+                    model.categories.forEach(function (category) {
+                        if (category.value > 0) {
+                            var valueHTML = category.valueWholePart + (model.isValueDecimalPart ? "." + category.valueDecimalPart : "");
+                            tooltip += "<tr>" +
+                                "<td style='color:" + category.color + "'>" + category.name + ":</td>" +
+                                "<td style='font-weight: bold; text-align: right'>" + valueHTML + "</td>" +
+                                (category.percent ? "<td style='text-align: right'>" + category.percent + "</td>" : "") +
+                                "</tr>";
+                        }
+                    });
+                    tooltip += "</table>";
+                    return tooltip;
+                },
+                useHTML: true,
+                shared: true
             }
         };
 
