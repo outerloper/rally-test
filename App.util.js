@@ -20,10 +20,6 @@ function storeDataToString(data, columns) {
     }, [actualColumns.join('\t') + '\t' + data.length]).join('\n');
 }
 
-function printStoreData(data, columns) {
-    console.debug(storeDataToString(data, columns));
-}
-
 function resolvedPromise(value) {
     return Deft.promise.Promise.when(value);
 }
@@ -127,6 +123,7 @@ function chainedExpression(operator, expressions) {
 function addBusinessDays(date, businessDays) {
     var result = new Date(date);
     if (businessDays) {
+        var oldTimezoneOffset = result.getTimezoneOffset();
         var days = result.getDate();
         var d = result.getDay();
         var step = businessDays > 0 ? 1 : -1;
@@ -134,11 +131,55 @@ function addBusinessDays(date, businessDays) {
         while (businessDays !== 0) {
             days += step;
             d = (d + weekDayStep) % 7;
-            if (d !== 0 && d != 6) {
+            if (d !== 0 && d !== 6) {
                 businessDays -= step;
             }
         }
         result.setDate(days);
+        var offsetDiff = result.getTimezoneOffset() - oldTimezoneOffset;
+        if (offsetDiff !== 0) {
+            result.setTime(result.getTime() - offsetDiff * 60000);
+        }
     }
     return result;
+}
+
+function parseCapacityPlan(capacityPlanDefinition) {
+    if (!capacityPlanDefinition) {
+        return null;
+    }
+    var capacityPlanString = capacityPlanDefinition.toString().trim();
+    if (!capacityPlanString) {
+        return null;
+    }
+    var parts = ("1970-01-01 " + capacityPlanString).split(/\s+/);
+    var date, previousDate = new Date(-1);
+    var capacityPlan = {
+        dates: [],
+        values: []
+    };
+    for (var dateIndex = 0, capacityIndex = 1; capacityIndex < parts.length; dateIndex += 2, capacityIndex += 2) {
+        date = new Date(parts[dateIndex]);
+        if (!parts[dateIndex].match(/^\d\d\d\d-\d\d?-\d\d?$/) || isNaN(date.getTime())) {
+            throw "'" + parts[dateIndex] + "' found when a date was expected. The expected format is YYYY-MM-DD";
+        }
+        if (previousDate >= date) {
+            throw "Invalid date: '" + dateToIsoString(date) + "'. It must be greater than '" + dateToIsoString(previousDate) + "'";
+        }
+        previousDate = date;
+        var capacity = parseFloat(parts[capacityIndex]);
+        if (!parts[capacityIndex].match(/^[+\-]?(\d*(\.\d+)|\d+)$/) || isNaN(capacity)) {
+            throw "'" + parts[capacityIndex] + "' found when a capacity value was expected. It must be a number";
+        }
+        if (capacity < 0) {
+            throw "'" + parts[capacityIndex] + "' found when a capacity value was expected. It must be a positive number";
+        }
+        capacityPlan.dates.push(dateToIsoString(date));
+        capacityPlan.values.push(capacity);
+    }
+    if (capacityIndex === parts.length) {
+        throw "Unexpected value at the end: '" + parts[dateIndex] + "'. Capacity Plan definition must end with a capacity value preceeded by a date";
+    }
+    capacityPlan.dates.push(dateToIsoString(new Date(9999999999999)));
+    return capacityPlan;
 }

@@ -326,16 +326,22 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             }).load()
         ]).then({
             success: function (contextItems) {
+                try {
+                    this.capacityPlan = parseCapacityPlan(this.getSetting("capacityPlan"));
+                } catch (error) {
+                    return rejectedPromise("The following problem found in the Capacity Plan definition: <strong>" + error + "</strong>. " +
+                        "Please correct the app settings:<pre>" + this.getSetting("capacityPlan") + "</pre>");
+                }
                 var milestones = contextItems[0];
                 this.project = contextItems[1];
                 this.ensureColorsForMilestones(milestones);
                 if (milestones.length === 0) {
-                    return rejectedPromise("No milestone specified. Set milestone filter in your page settings or choose milestone in your app settings.");
+                    return rejectedPromise("No milestone specified. Set milestone filter in your page settings or choose milestone in the app settings.");
                 }
                 this.teamFeatures = contextItems[2];
                 if (this.teamFeatures.length === 0 && teamFeatureIds.length > 0) {
                     return rejectedPromise("None of the Team Features specified in the app settings, ID: <strong>" + teamFeatureIds.join(", ") + "</strong>, " +
-                        "exist in this project. Please correct your settings or change the project.");
+                        "exist in this project. Please correct the app settings or change the project.");
                 }
                 this.iteration = contextItems[3][0];
                 var query = chainedExpression("OR", milestones.map(function (milestone) {
@@ -391,13 +397,13 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             query._ItemHierarchy = {$in: teamFeatureIds};
         }
         var fetchFields = ["_ValidFrom", "_ValidTo", "ObjectID", "FormattedID", "PlanEstimate", "ScheduleState"];
-        var troubleshooting = this.getSetting("debug");
+        var debug = this.getSetting("debug");
         var storeConfig = {
             listeners: {
                 load: function (store, data, success) {
-                    if (troubleshooting) {
+                    if (debug) {
                         console.debug("[DEBUG] Data snapshots for chart START:");
-                        printStoreData(data, fetchFields);
+                        console.debug(storeDataToString(data, fetchFields));
                         console.debug("[DEBUG] Data snapshots for chart END.");
                     }
                 }
@@ -430,7 +436,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     maxEndDate: endDate,
                     targetDate: targetDate,
                     iteration: this.iteration,
-                    capacityPlan: this.getSetting("capacityPlan"),
+                    capacityPlan: this.capacityPlan,
                     auxDates: this.getAuxDates(milestones),
                     drawIterations: this.getSetting("drawIterations"),
                     customStartDate: this.getSetting("customStartDate"),
@@ -516,4 +522,3 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
     }
 }, dev ? dev.app : null));
-

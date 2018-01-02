@@ -43,21 +43,32 @@ window.dev = {
     app: {
         config: {
             defaultSettings: {
-                capacityPlan: "1 2017-12-10 2 2017-12-20 0 2018-01-02 4",
+                // capacityPlan: "0.5 2017-12-15 1.5 2017-12-20\n0.0 2018-01-03 4.0 2018-01-20\n5",
+                capacityPlan: "2 2017-03-31 4 2017-05-03 6 2017-07-08 2 ",
+                // capacityPlan: "0 2018-01-28 5",
+                // capacityPlan: "0 2018-01-28 -2 2018-01-30 5", // invalid
+                // capacityPlan: "0 2018-01-28 2018-01-30 5", // invalid
+                // capacityPlan: "0 1 2018-01-28 2 2018-01-30 5", // invalid
+                // capacityPlan: "0 2018-01-28 2 2018-01-30", // invalid
+                // capacityPlan: "0 2018-01-28 2 2018-01-01 3", // invalid
+                // capacityPlan: "invalid", // invalid
+                // capacityPlan: " ", // should be ignored
+                // capacityPlan: "1", // should behave like no plan defined
+                // capacityPlan: "0", // should be ignored/behave like no plan defined
                 //customTrendStartDate: "2016-03-01",
                 // customTrendStartDate: "2017-11-27",
                 //customStartDate: "2016-05-05",
-                maxDaysAfterTargetDate: 0,
+                maxDaysAfterTargetDate: 45,
                 markAuxDates: true,
                 drawIterations: true,
                 displayWidth: 50,
                 //project: "/project/52219765529", // csm
                 //project: "/project/52953911025", // fm
                 //project: "/project/52220062189", // pm
-                project: "/project/52220062990", // sm
+                // project: "/project/52220062990", // sm
                 // project: "/project/52121885700", // FPM Charlie
                 // project: "/project/53630224881", // smk
-                //project: "/project/53630226508", // smd
+                project: "/project/53630226508", // smd
                 //project: "/project/52219769418", // slm
                 //project: "/project/52219764059", // s
                 // project: "/project/52219602590", // a
@@ -68,7 +79,8 @@ window.dev = {
                 // teamFeatures: "TF13374, TF13360, TF18854, TF19226, TF13393, TF13397", // 16.0
                 // teamFeatures: "77426086652, 59291054867, 59287501066, 59286613915, 59284079199, 80859898716", // 16.0
                 // teamFeatures: "TF29957, TF29959, TF28954", // 16.2
-                teamFeatures: "29957 29959;tf28954", // 16.2
+                // teamFeatures: "TF29957", // 16.2
+                // teamFeatures: "29957 29959;tf28954", // 16.2
                 // teamFeatures: "NON_EX", // non existing
                 debug: true,
                 xxxx: null
@@ -85,9 +97,9 @@ window.dev = {
             //return [53823678379]; // s15.1
             // return [55681896657]; // d15.2
             //return [55692822039]; // d15.3
-            // return [53888803641]; // d16.0
-            // return [77427327504]; // s16.0
-            return [130767064724]; // d16.2
+            return [53888803641]; // d16.0
+            // return [54389009403]; // s16.0
+            // return [130767064724]; // d16.2
             //return [49774672980]; // css/int/rel7.3
             //return [53823409519, 53823678379];
             // return []; // from app context

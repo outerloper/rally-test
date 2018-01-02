@@ -37,6 +37,12 @@ Ext.define("My.BurnUpCalculation", {
             "Completed": {position: 3},
             "Accepted": {position: 4}
         };
+        var capacityProvider = {
+            capacity: function(index) {
+                return this.projectionCalculator.capacityPlan ? this.projectionCalculator.stepWeight(index) : null;
+            }
+        };
+        this.capacityProvider = capacityProvider;
 
         this.chartConfig = {
             xAxis: {
@@ -81,7 +87,7 @@ Ext.define("My.BurnUpCalculation", {
                             category.percent = percentWholePart + "." + Math.floor(Math.round((perMil - percentWholePart * 10))) + "%";
                         }
                     });
-                    var tooltip = "<table style='border-spacing: 1ex 0'><caption>" + this.x + "</caption>";
+                    var tooltip = "<table style='border-spacing: 1ex 0; width: 100%'><caption>" + this.x + "</caption>";
                     model.categories.forEach(function (category) {
                         if (category.value > 0) {
                             var valueHTML = category.valueWholePart + (model.isValueDecimalPart ? "." + category.valueDecimalPart : "");
@@ -93,6 +99,10 @@ Ext.define("My.BurnUpCalculation", {
                         }
                     });
                     tooltip += "</table>";
+                    var capacity = capacityProvider.capacity(this.points[0].point.x);
+                    if (capacity !== null) {
+                        tooltip += "<div style='padding-top: 0.8em; text-align: center; font-size: 0.9em'>Planned capacity: " + capacity + "/day</div>";
+                    }
                     return tooltip;
                 },
                 useHTML: true,
@@ -178,15 +188,17 @@ Ext.define("My.BurnUpCalculation", {
         var targetDateIndex = this.findDateIndex(dates, this.calcConfig.targetDate);
         var todayAcceptedPoints = acceptedData[todayIndex];
         var todayPlannedPoints = plannedData[todayIndex];
-        var trendStart = this.getTrendStart(dates, acceptedData);
+        var projectionStart = this.getTrendStart(dates, acceptedData);
         var trendSeries;
         var completedIndex;
-        var stepProvider = this.createStepProvider({
+        var projectionCalculator = this.createProjectionCalculator({
             capacityPlan: this.calcConfig.capacityPlan,
-            trendStart: trendStart
+            projectionStart: projectionStart,
+            firstDate: dates[0]
         });
+        this.capacityProvider.projectionCalculator = projectionCalculator;
         if (this.calcConfig.targetDate) {
-            var idealData = stepProvider.trendData(targetDateIndex, plannedData[targetDateIndex], targetDateIndex);
+            var idealData = projectionCalculator.trendData(targetDateIndex, plannedData[targetDateIndex], targetDateIndex);
             this.addSeriesLine(data, "Ideal", idealData, {dashStyle: "Dot"});
             this.addSubtitleText(this.TARGET_DATE + ": " + formatDate(this.calcConfig.targetDate));
         }
@@ -198,9 +210,20 @@ Ext.define("My.BurnUpCalculation", {
                 k--;
             }
             completedIndex = trendControlIndex;
+        } else {
+            var lastIndex = dates.length - 1;
+            var lastPlannedPoints = plannedData[lastIndex];
+            if (acceptedData[lastIndex] === lastPlannedPoints && lastPlannedPoints > 0) {
+                completedIndex = lastIndex;
+                var l = lastIndex - 1;
+                while (acceptedData[l] === lastPlannedPoints || acceptedData[l] === null && plannedData[l] === lastPlannedPoints) {
+                    completedIndex--;
+                    l--;
+                }
+            }
         }
         var projectedEndIndex;
-        var projectedDateIndex = stepProvider.trendTargetIndex(trendControlIndex, todayAcceptedPoints, todayPlannedPoints);
+        var projectedDateIndex = projectionCalculator.trendTargetIndex(trendControlIndex, todayAcceptedPoints, todayPlannedPoints);
         if (projectedDateIndex) {
             var maxDaysAfterTargetDate = this.calcConfig.maxDaysAfterTargetDate || 0;
             var trendEndIndex = Math.min(projectedDateIndex, (targetDateIndex === -1 ? trendControlIndex : targetDateIndex) + maxDaysAfterTargetDate);
@@ -208,15 +231,17 @@ Ext.define("My.BurnUpCalculation", {
                 plannedData.push(todayPlannedPoints);
                 dates.push(dateToIsoString(addBusinessDays(new Date(dates[dates.length - 1]), 1)));
             }
-            trendSeries = stepProvider.trendData(trendControlIndex, todayAcceptedPoints, trendEndIndex, todayPlannedPoints);
-            this.addSeriesLine(data, "Trend", trendSeries, {dashStyle: "Dash"});
+            if (projectionCalculator.trendFactor(trendControlIndex, todayAcceptedPoints, trendEndIndex, todayPlannedPoints) !== Infinity) {
+                trendSeries = projectionCalculator.trendData(trendControlIndex, todayAcceptedPoints, trendEndIndex, todayPlannedPoints);
+                this.addSeriesLine(data, "Trend", trendSeries, {dashStyle: "Dash"});
 
-            if (projectedDateIndex <= trendEndIndex) {
-                projectedEndIndex = projectedDateIndex;
-            }
-            this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
-            if (!completedIndex && this.projectedEndDate) {
-                this.addSubtitleText(this.PROJECTED_DATE + ": " + formatDate(this.projectedEndDate));
+                if (projectedDateIndex <= trendEndIndex) {
+                    projectedEndIndex = projectedDateIndex;
+                }
+                this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
+                if (!completedIndex && this.projectedEndDate) {
+                    this.addSubtitleText(this.PROJECTED_DATE + ": " + formatDate(this.projectedEndDate));
+                }
             }
         }
         // do not display completed columns after target date
@@ -378,23 +403,23 @@ Ext.define("My.BurnUpCalculation", {
         });
     },
 
-    createStepProvider: function (stepProviderConfig) {
-        return stepProviderConfig.capacityPlan ?
-            Ext.create("My.BurnupCalculation.FlexStepProvider", stepProviderConfig) :
-            Ext.create("My.BurnupCalculation.FixedStepProvider", stepProviderConfig);
+    createProjectionCalculator: function (config) {
+        return config.capacityPlan ?
+            Ext.create("My.FlexProjectionCalculator", config) :
+            Ext.create("My.FixedProjectionCalculator", config);
     }
 });
 
-Ext.define("My.BurnupCalculation.FixedStepProvider", {
+Ext.define("My.FixedProjectionCalculator", {
     constructor: function (config) {
         this.callParent(arguments);
-        this.startIndex = config.trendStart.index;
-        this.startValue = config.trendStart.value;
+        this.startIndex = config.projectionStart.index;
+        this.startValue = config.projectionStart.value;
     },
-
-    trendStep: function (endIndex, endValue) {
+    
+    trendFactor: function (endIndex, endValue) {
         if (this.startIndex >= 0 && this.startIndex < endIndex && this.startValue !== endValue) {
-            return (endValue - this.startValue) / (endIndex - this.startIndex);
+            return this._trendFactor(endIndex, endValue);
         } else {
             console.log("Unable to calculate trend step for values: (startIndex=" +
                 this.startIndex + ", startValue=" + this.startValue + ", endIndex=" + endIndex + ", endValue=" + endValue + ")"
@@ -404,8 +429,8 @@ Ext.define("My.BurnupCalculation.FixedStepProvider", {
     },
 
     trendData: function (endIndex, endValue, indexLimit, valueLimit) {
-        var trendStep = this.trendStep(endIndex, endValue);
-        if (trendStep && indexLimit !== 0) {
+        var trendFactor = this.trendFactor(endIndex, endValue);
+        if (trendFactor && indexLimit !== 0) {
             var data = [];
             var i;
             for (i = 0; i < this.startIndex; i++) {
@@ -415,7 +440,7 @@ Ext.define("My.BurnupCalculation.FixedStepProvider", {
             i++;
             var actualIndexLimit = indexLimit || Infinity;
             for (; i <= actualIndexLimit && (!valueLimit || data[i - 1] <= valueLimit); i++) {
-                data[i] = data[i - 1] + trendStep;
+                data[i] = data[i - 1] + trendFactor * this.stepWeight(i);
             }
             return data;
         } else {
@@ -424,19 +449,53 @@ Ext.define("My.BurnupCalculation.FixedStepProvider", {
     },
 
     trendTargetIndex: function (endIndex, endValue, targetValue) {
-        var trendStep = this.trendStep(endIndex, endValue);
-        if (trendStep && (endValue - this.startValue) * (targetValue - endValue) >= 0) {
-            return endIndex + Math.ceil((targetValue - endValue) / trendStep);
+        var trendFactor = this.trendFactor(endIndex, endValue);
+        if (trendFactor && (endValue - this.startValue) * (targetValue - endValue) >= 0) {
+            return endIndex + Math.ceil((targetValue - endValue) / trendFactor);
         } else {
             return null;
         }
+    },
+
+    stepWeight: function (index) {
+        return 1;
+    },
+
+    _trendFactor: function (endIndex, endValue) {
+        return (endValue - this.startValue) / (endIndex - this.startIndex);
     }
 });
 
-Ext.define("My.BurnupCalculation.FlexStepProvider", {
-    extend: "My.BurnupCalculation.FixedStepProvider",
+Ext.define("My.FlexProjectionCalculator", {
+    extend: "My.FixedProjectionCalculator",
 
     constructor: function (config) {
         this.callParent(arguments);
+        this.capacity = [];
+        this.capacityPlan = config.capacityPlan;
+        this.capacityPlanCursor = 0;
+        this.dateCursor = config.firstDate;
+    },
+
+    stepWeight: function (index) {
+        if (this.capacity[index]) {
+            return this.capacity[index];
+        }
+        for (var i = this.capacity.length; i <= index; i++) {
+            if (this.dateCursor >= this.capacityPlan.dates[this.capacityPlanCursor + 1]) {
+                this.capacityPlanCursor++;
+            }
+            this.capacity[i] = this.capacityPlan.values[this.capacityPlanCursor];
+            this.dateCursor = dateToIsoString(addBusinessDays(this.dateCursor, 1));
+        }
+        return this.capacity[index];
+    },
+
+    _trendFactor: function (endIndex, endValue) {
+        var weightSum = 0;
+        for (var i = this.startIndex + 1; i <= endIndex; i++) {
+            weightSum += this.stepWeight(i);
+        }
+        return (endValue - this.startValue) / weightSum;
     }
 });
