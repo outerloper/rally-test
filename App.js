@@ -404,7 +404,24 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     if (debug) {
                         console.debug("[DEBUG] Data snapshots for chart START:");
                         console.debug(storeDataToString(data, fetchFields));
-                        console.debug("[DEBUG] Data snapshots for chart END.");
+
+                        console.debug("[DEBUG] Query for list of all stories:");
+                        console.debug(workItemQuery(data, function (item) {
+                            return isUserStory(item);
+                        }));
+                        console.debug("[DEBUG] Query for list of all defects:");
+                        console.debug(workItemQuery(data, function (item) {
+                            return isDefect(item);
+                        }));
+
+                        console.debug("[DEBUG] Query for list of not accepted stories:");
+                        console.debug(workItemQuery(data, function (item) {
+                            return isUserStory(item) && !isAccepted(item);
+                        }));
+                        console.debug("[DEBUG] Query for list of not accepted defects:");
+                        console.debug(workItemQuery(data, function (item) {
+                            return isDefect(item) && !isAccepted(item);
+                        }));
                     }
                 }
             },
@@ -491,7 +508,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         milestones.forEach(function (milestone) {
             if (app.getSetting("markAuxDates")) {
                 milestone.get("Notes").split(/<\/?[^>]+>/g).map(function (html) {
-                    return html.trim().match(/(\d\d\d\d-\d\d-\d\d)\W+(\w.*)/);
+                    return html.trim().match(/^(\d\d\d\d-\d\d?-\d\d?)\W+(\w.*)$/);
                 }).forEach(function (matches) {
                     if (matches && !isNaN(Date.parse(matches[1]))) {
                         result[matches[1]] = matches[2].length <= 20 ? matches[2] : matches[2].substring(0, 20).trim() + "...";
@@ -506,19 +523,15 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     },
 
     getChartTitle: function (milestones, teamFeatures) {
-        var customTitle = this.getSetting("customTitle");
-        if (customTitle) {
-            return customTitle;
-        }
         var context = this.getContext();
-        return [
-                milestones.map(function (milestone) {
-                    return formatMilestone(milestone, context);
-                }).join(", ")
-            ].concat(teamFeatures.map(function (teamFeature) {
+        var title = milestones.map(function (milestone) {
+            return formatMilestone(milestone, context);
+        }).join(", ");
+        if (teamFeatures && teamFeatures.length > 0) {
+            title += ": " + teamFeatures.map(function (teamFeature) {
                     return formatTeamFeature(teamFeature, context);
-                }).join(", ")
-            ).join(": ") +
-            " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
+                }).join(", ");
+        }
+        return title + " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
     }
 }, dev ? dev.app : null));

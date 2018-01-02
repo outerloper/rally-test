@@ -119,6 +119,26 @@ function chainedExpression(operator, expressions) {
     return "((" + joined + "))";
 }
 
+function workItemQuery(data, condition) {
+    var itemIDs = data.filter(function (item) {
+        return item.data._ValidTo === "9999-01-01T00:00:00.000Z";
+    }).filter(condition).map(function (item) {
+        return "ObjectID = " + item.data.ObjectID;
+    });
+    return itemIDs.length > 0 ? chainedExpression("OR", itemIDs) : "* no such items *";
+}
+
+function isUserStory(item) {
+    return item.data.FormattedID.indexOf("US") === 0;
+}
+
+function isDefect(item) {
+    return item.data.FormattedID.indexOf("DE") === 0;
+}
+
+function isAccepted(item) {
+    return item.data.ScheduleState === "Accepted" || item.data.ScheduleState === "Released-to-Production";
+}
 
 function addBusinessDays(date, businessDays) {
     var result = new Date(date);
