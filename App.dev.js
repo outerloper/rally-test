@@ -43,7 +43,7 @@ window.dev = {
     app: {
         config: {
             defaultSettings: {
-                capacityPlan: "0.5 2017-12-15 1.5 2017-12-20\n0.0 2018-01-10 4 2018-01-25\n0",
+                capacityPlan: "0.5 2017-12-15 1.5 2017-12-20\n0.0 2018-01-10 3 2018-01-25\n5",
                 // capacityPlan: "2 2017-03-31 4 2017-05-03 6 2017-07-08 2 ",
                 // capacityPlan: "0 2018-01-28 5",
                 // capacityPlan: "0 2018-01-28 -2 2018-01-30 5", // invalid
@@ -68,18 +68,18 @@ window.dev = {
                 // project: "/project/52220062990", // sm
                 // project: "/project/52121885700", // FPM Charlie
                 // project: "/project/53630224881", // smk
-                // project: "/project/53630226508", // smd
+                project: "/project/53630226508", // smd
                 //project: "/project/52219769418", // slm
                 //project: "/project/52219764059", // s
-                project: "/project/52219602590", // a
+                // project: "/project/52219602590", // a
                 //project: "/project/29475348986", // css/int
                 //project: "/project/27159833906", // css
                 //project: undefined, // from app context
                 // teamFeatures: "TF10560, TF15110", // 15.2
                 // teamFeatures: "TF13374, TF13360, TF18854, TF19226, TF13393, TF13397", // 16.0
                 // teamFeatures: "77426086652, 59291054867, 59287501066, 59286613915, 59284079199, 80859898716", // 16.0
-                teamFeatures: "TF29957, TF29959, TF28954", // 16.2
-                // teamFeatures: "TF29957", // 16.2
+                // teamFeatures: "TF29957, TF29959, TF28954", // 16.2
+                teamFeatures: "TF29957", // 16.2
                 // teamFeatures: "29957 29959;tf28954", // 16.2
                 // teamFeatures: "NON_EX", // non existing
                 debug: true,

@@ -1085,7 +1085,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 var filter = Rally.data.wsapi.Filter.fromQueryString(query);
                 var context = {project: this.getProjectId() ? "/project/" + this.getProjectId() : null};
                 return promiseAll(
-                    this.getArtifactTypes(teamFeatureIds).map(function (artifactType) {
+                    ["PortfolioItem/TeamFeature", "HierarchicalRequirement", "Defect"].map(function (artifactType) {
                         return Ext.create('Rally.data.wsapi.Store', {
                             model: artifactType,
                             filters: filter,
@@ -1109,27 +1109,20 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         });
     },
 
-    getArtifactTypes: function () {
-        var result = ["HierarchicalRequirement"];
-        if (this.getTeamFeatureIds().length === 0) {
-            result.push("PortfolioItem/TeamFeature", "Defect");
-        }
-        return result;
-    },
-
     getConfigForChart: function (artifactIds, milestones, teamFeatures) {
         var teamFeatureIds = teamFeatures.map(function (teamFeature) {
             return +teamFeature.get("ObjectID");
         });
         var query = {
             _ProjectHierarchy: this.projectId,
+            $and: [
+                {_ItemHierarchy: {$in: artifactIds}}
+            ],
             _TypeHierarchy: {$in: ["Defect", "HierarchicalRequirement"]},
-            _ItemHierarchy: {$in: artifactIds},
             Children: null
         };
         if (teamFeatureIds.length > 0) {
-            query.ObjectID = {$in: artifactIds};
-            query._ItemHierarchy = {$in: teamFeatureIds};
+            query.$and.push({_ItemHierarchy: {$in: teamFeatureIds}});
         }
         var fetchFields = ["_ValidFrom", "_ValidTo", "ObjectID", "FormattedID", "PlanEstimate", "ScheduleState"];
         var debug = this.getSetting("debug");
