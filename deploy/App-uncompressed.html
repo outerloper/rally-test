@@ -253,8 +253,11 @@ function parseCapacityPlan(capacityPlanDefinition) {
             "Accepted": {position: 4}
         };
         var capacityProvider = {
-            capacity: function(index) {
+            capacity: function (index) {
                 return this.projectionCalculator.capacityPlan ? this.projectionCalculator.stepWeight(index) : null;
+            },
+            idealBurnUp: function (index) {
+                return this.idealSeries && this.idealSeries[index - 1] && this.idealSeries[index] ? this.idealSeries[index] - this.idealSeries[index - 1] : null;
             }
         };
         this.capacityProvider = capacityProvider;
@@ -302,7 +305,7 @@ function parseCapacityPlan(capacityPlanDefinition) {
                             category.percent = percentWholePart + "." + Math.floor(Math.round((perMil - percentWholePart * 10))) + "%";
                         }
                     });
-                    var tooltip = "<table style='border-spacing: 1ex 0; width: 100%'><caption>" + this.x + "</caption>";
+                    var tooltip = "<table style='border-spacing: 1ex 0; width: 100%'><caption style='padding-bottom: 0.4em'>" + this.x + "</caption>";
                     model.categories.forEach(function (category) {
                         if (category.value > 0) {
                             var valueHTML = category.valueWholePart + (model.isValueDecimalPart ? "." + category.valueDecimalPart : "");
@@ -314,9 +317,18 @@ function parseCapacityPlan(capacityPlanDefinition) {
                         }
                     });
                     tooltip += "</table>";
-                    var capacity = capacityProvider.capacity(this.points[0].point.x);
+                    var footer = [];
+                    var index = this.points[0].point.x;
+                    var capacity = capacityProvider.capacity(index);
                     if (capacity !== null) {
-                        tooltip += "<div style='padding-top: 0.8em; text-align: center; font-size: 0.9em'>Planned capacity: " + capacity + "/day</div>";
+                        footer.push("Planned capacity: " + capacity);
+                    }
+                    var velocity = capacityProvider.idealBurnUp(index);
+                    if (velocity !== null) {
+                        footer.push("Ideal burnup: " + velocity.toFixed(2));
+                    }
+                    if (footer) {
+                        tooltip += "<div style='padding-top: 0.8em; text-align: center; font-size: 0.9em'>" + footer.join("<br/>") + "</div>";
                     }
                     return tooltip;
                 },
@@ -413,11 +425,13 @@ function parseCapacityPlan(capacityPlanDefinition) {
         });
         this.capacityProvider.projectionCalculator = projectionCalculator;
         if (this.calcConfig.targetDate) {
-            var idealData = projectionCalculator.trendData(targetDateIndex, plannedData[targetDateIndex], targetDateIndex);
-            this.addSeriesLine(data, "Ideal", idealData, {dashStyle: "Dot"});
+            var idealSeries = projectionCalculator.projectionSeries(targetDateIndex, plannedData[targetDateIndex], targetDateIndex);
+            this.capacityProvider.idealSeries = idealSeries;
+            this.addSeriesLine(data, "Ideal", idealSeries, {dashStyle: "Dot"});
             this.addSubtitleText(this.TARGET_DATE + ": " + formatDate(this.calcConfig.targetDate));
         }
         var trendControlIndex = todayIndex;
+        // when scope completed
         if (todayAcceptedPoints === todayPlannedPoints && todayPlannedPoints > 0) {
             var k = trendControlIndex - 1;
             while (acceptedData[k] === todayPlannedPoints || acceptedData[k] === null && plannedData[k] === todayPlannedPoints) {
@@ -437,40 +451,53 @@ function parseCapacityPlan(capacityPlanDefinition) {
                 }
             }
         }
-        var projectedEndIndex;
-        var projectedDateIndex = projectionCalculator.trendTargetIndex(trendControlIndex, todayAcceptedPoints, todayPlannedPoints);
-        if (projectedDateIndex) {
+        var projectedDateIndex;
+        var maxIndex;
+        if (trendControlIndex !== -1) {
             var maxDaysAfterTargetDate = this.calcConfig.maxDaysAfterTargetDate || 0;
-            var trendEndIndex = Math.min(projectedDateIndex, (targetDateIndex === -1 ? trendControlIndex : targetDateIndex) + maxDaysAfterTargetDate);
-            for (var j = Math.max(todayIndex, targetDateIndex, dates.length - 1); j < trendEndIndex; j++) {
+            maxIndex = Math.max(todayIndex, (targetDateIndex === -1 ? trendControlIndex : targetDateIndex) + maxDaysAfterTargetDate);
+            // draw trend
+            var trendFactor = projectionCalculator.projectionFactor(trendControlIndex, todayAcceptedPoints, Infinity, todayPlannedPoints);
+            if (trendFactor !== Infinity) {
+                trendSeries = projectionCalculator.projectionSeries(trendControlIndex, todayAcceptedPoints, Infinity, todayPlannedPoints);
+                if (trendSeries) {
+                    this.addSeriesLine(data, "Trend", trendSeries.slice(0, maxIndex + 1), {dashStyle: "Dash"});
+                    projectedDateIndex = trendSeries.length - 1;
+                    this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
+                    if (!completedIndex && this.projectedEndDate) {
+                        this.addSubtitleText(this.PROJECTED_DATE + ": " + formatDate(this.projectedEndDate));
+                    }
+                }
+            }
+            // expand categories and scope line beyond today
+            for (var j = Math.max(todayIndex, targetDateIndex, dates.length - 1); j < maxIndex; j++) {
                 plannedData.push(todayPlannedPoints);
                 dates.push(dateToIsoString(addBusinessDays(new Date(dates[dates.length - 1]), 1)));
             }
-            if (projectionCalculator.trendFactor(trendControlIndex, todayAcceptedPoints, trendEndIndex, todayPlannedPoints) !== Infinity) {
-                trendSeries = projectionCalculator.trendData(trendControlIndex, todayAcceptedPoints, trendEndIndex, todayPlannedPoints);
-                this.addSeriesLine(data, "Trend", trendSeries, {dashStyle: "Dash"});
-
-                if (projectedDateIndex <= trendEndIndex) {
-                    projectedEndIndex = projectedDateIndex;
-                }
-                this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
-                if (!completedIndex && this.projectedEndDate) {
-                    this.addSubtitleText(this.PROJECTED_DATE + ": " + formatDate(this.projectedEndDate));
-                }
-            }
         }
-        // do not display completed columns after target date
+        var spliceIndex;
+        var deleteCount = dates.length;
         if (completedIndex) {
-            var spliceIndex = Math.max(completedIndex, targetDateIndex) + 1;
-            var deleteCount = dates.length;
+            // do not display completed columns after target date
+            spliceIndex = Math.max(completedIndex, targetDateIndex) + 1;
             dates.splice(spliceIndex, deleteCount);
             acceptedData.splice(spliceIndex, deleteCount);
             plannedData.splice(spliceIndex, deleteCount);
             this.getSeriesData(data, "In Progress").splice(spliceIndex, deleteCount);
             this.getSeriesData(data, "Completed").splice(spliceIndex, deleteCount);
             this.addSubtitleText(this.COMPLETED + ": " + formatDate(dates[completedIndex]));
+        } else {
+            // truncate not interesting data from the right
+            var ifEmpty = function(index, ifEmpty) {
+                return index === -1 || index === null || index === undefined ? ifEmpty : index;
+            };
+            spliceIndex = Math.max(ifEmpty(todayIndex, 0), ifEmpty(targetDateIndex, 0), Math.min(ifEmpty(projectedDateIndex, null), ifEmpty(maxIndex, null))) + 1;
+            if (spliceIndex) {
+                dates.splice(spliceIndex, deleteCount);
+                plannedData.splice(spliceIndex, deleteCount);
+            }
         }
-        this.addPlotLines(dates, projectedEndIndex, completedIndex);
+        this.addPlotLines(dates, projectedDateIndex, completedIndex);
         // ignore too big historical scope for better readability of the chart
         var maxPlannedPoints = plannedData.reduce(function (e, max) {
             return e > max ? e : max;
@@ -631,10 +658,10 @@ Ext.define("My.FixedProjectionCalculator", {
         this.startIndex = config.projectionStart.index;
         this.startValue = config.projectionStart.value;
     },
-    
-    trendFactor: function (endIndex, endValue) {
+
+    projectionFactor: function (endIndex, endValue) {
         if (this.startIndex >= 0 && this.startIndex < endIndex && this.startValue !== endValue) {
-            return this._trendFactor(endIndex, endValue);
+            return this._projectionFactor(endIndex, endValue);
         } else {
             console.log("Unable to calculate trend step for values: (startIndex=" +
                 this.startIndex + ", startValue=" + this.startValue + ", endIndex=" + endIndex + ", endValue=" + endValue + ")"
@@ -643,9 +670,9 @@ Ext.define("My.FixedProjectionCalculator", {
         }
     },
 
-    trendData: function (endIndex, endValue, indexLimit, valueLimit) {
-        var trendFactor = this.trendFactor(endIndex, endValue);
-        if (trendFactor && indexLimit !== 0) {
+    projectionSeries: function (endIndex, endValue, indexLimit, valueLimit) {
+        var projectionFactor = this.projectionFactor(endIndex, endValue);
+        if (projectionFactor && indexLimit !== 0) {
             var data = [];
             var i;
             for (i = 0; i < this.startIndex; i++) {
@@ -654,19 +681,10 @@ Ext.define("My.FixedProjectionCalculator", {
             data[i] = this.startValue;
             i++;
             var actualIndexLimit = indexLimit || Infinity;
-            for (; i <= actualIndexLimit && (!valueLimit || data[i - 1] <= valueLimit); i++) {
-                data[i] = data[i - 1] + trendFactor * this.stepWeight(i);
+            for (; i <= actualIndexLimit && (!valueLimit || data[i - 1] + 0.000000001 < valueLimit); i++) {
+                data[i] = data[i - 1] + projectionFactor * this.stepWeight(i);
             }
             return data;
-        } else {
-            return null;
-        }
-    },
-
-    trendTargetIndex: function (endIndex, endValue, targetValue) {
-        var trendFactor = this.trendFactor(endIndex, endValue);
-        if (trendFactor && (endValue - this.startValue) * (targetValue - endValue) >= 0) {
-            return endIndex + Math.ceil((targetValue - endValue) / trendFactor);
         } else {
             return null;
         }
@@ -676,7 +694,7 @@ Ext.define("My.FixedProjectionCalculator", {
         return 1;
     },
 
-    _trendFactor: function (endIndex, endValue) {
+    _projectionFactor: function (endIndex, endValue) {
         return (endValue - this.startValue) / (endIndex - this.startIndex);
     }
 });
@@ -706,7 +724,7 @@ Ext.define("My.FlexProjectionCalculator", {
         return this.capacity[index];
     },
 
-    _trendFactor: function (endIndex, endValue) {
+    _projectionFactor: function (endIndex, endValue) {
         var weightSum = 0;
         for (var i = this.startIndex + 1; i <= endIndex; i++) {
             weightSum += this.stepWeight(i);
@@ -1160,14 +1178,13 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             endDate = today;
         } else if (today > targetDate) {
             var maxEndDate = addBusinessDays(targetDate, maxDaysAfterTargetDate);
-            endDate = today > maxEndDate ? maxEndDate : today;
+            endDate = today > maxEndDate ? today : maxEndDate;
         }
         return {
             calculatorType: "My.MilestoneBurnUpCalculator",
             calculatorConfig: {
                 endDate: endDate,
                 calculationConfig: {
-                    maxEndDate: endDate,
                     targetDate: targetDate,
                     iteration: this.iteration,
                     capacityPlan: this.capacityPlan,

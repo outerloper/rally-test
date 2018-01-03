@@ -443,14 +443,13 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             endDate = today;
         } else if (today > targetDate) {
             var maxEndDate = addBusinessDays(targetDate, maxDaysAfterTargetDate);
-            endDate = today > maxEndDate ? maxEndDate : today;
+            endDate = today > maxEndDate ? today : maxEndDate;
         }
         return {
             calculatorType: "My.MilestoneBurnUpCalculator",
             calculatorConfig: {
                 endDate: endDate,
                 calculationConfig: {
-                    maxEndDate: endDate,
                     targetDate: targetDate,
                     iteration: this.iteration,
                     capacityPlan: this.capacityPlan,
