@@ -350,7 +350,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 var filter = Rally.data.wsapi.Filter.fromQueryString(query);
                 var context = {project: this.getProjectId() ? "/project/" + this.getProjectId() : null};
                 return promiseAll(
-                    ["PortfolioItem/TeamFeature", "HierarchicalRequirement", "Defect"].map(function (artifactType) {
+                    ["PortfolioItem", "HierarchicalRequirement", "Defect"].map(function (artifactType) {
                         return Ext.create('Rally.data.wsapi.Store', {
                             model: artifactType,
                             filters: filter,
