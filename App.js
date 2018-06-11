@@ -60,6 +60,13 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             config: defaultConfig
         });
         settingsFields.push({name: "teamFeatures", xtype: "textfield", label: "Take only these Team Features: (IDs)", config: defaultConfig});
+        settingsFields.push({
+            name: "tags",
+            xtype: "textfield",
+            label: "Only items with these tags/<abbr title='You can mark stories/defects/features by putting keywords surrounded with square brackets " +
+            "in their names, e.g. \"[integration]\"'>markers</abbr>:",
+            config: defaultConfig
+        });
         settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until:", config: defaultConfig});
         settingsFields.push({name: "customTrendStartDate", xtype: "rallydatefield", label: "Start projection lines from:", config: defaultConfig});
         settingsFields.push({
@@ -153,8 +160,20 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         if (!teamFeatures) {
             return [];
         }
-        return teamFeatures.toString().split(/\s*[,;\s]\s*/).map(function (id) {
+        return teamFeatures.toString().split(/\s*[,;\s]\s*/).filter(function (id) {
+            return id !== "";
+        }).map(function (id) {
             return id.match(/^\d+$/) ? "TF" + id : id.toUpperCase();
+        });
+    },
+
+    getTags: function () {
+        var tags = this.getSetting("tags");
+        if (!tags) {
+            return [];
+        }
+        return tags.toString().split(/\s*[,;]\s*/).filter(function (tag) {
+            return tag !== "";
         });
     },
 
@@ -297,18 +316,24 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
 
     getDataForChart: function () {
         var teamFeatureIds = this.getTeamFeatureIds();
+        var tags = this.getTags();
         return promiseAll([
+            !this.getProjectId() ? this.getProjectId() : Rally.data.ModelFactory.getModel({type: "Project"}).then({
+                success: function (model) {
+                    return model.load(this.getProjectId());
+                },
+                scope: this
+            }),
+            Ext.create("Rally.data.wsapi.Store", {
+                model: "Iteration",
+                fetch: ["StartDate", "EndDate"],
+                filters: Rally.data.wsapi.Filter.fromQueryString("((StartDate <= today) AND (EndDate >= today))")
+            }).load(),
             this.getMilestoneIds().length === 0 ? [] : Rally.data.ModelFactory.getModel({type: "Milestone"}).then({
                 success: function (model) {
                     return promiseAll(this.getMilestoneIds().map(function (id) {
                         return model.load(id);
                     }));
-                },
-                scope: this
-            }),
-            !this.getProjectId() ? this.getProjectId() : Rally.data.ModelFactory.getModel({type: "Project"}).then({
-                success: function (model) {
-                    return model.load(this.getProjectId());
                 },
                 scope: this
             }),
@@ -318,11 +343,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     return "FormattedID = " + id;
                 }))),
                 scope: this
-            }).load(),
-            Ext.create("Rally.data.wsapi.Store", {
-                model: "Iteration",
-                fetch: ["StartDate", "EndDate"],
-                filters: Rally.data.wsapi.Filter.fromQueryString("((StartDate <= today) AND (EndDate >= today))")
             }).load()
         ]).then({
             success: function (contextItems) {
@@ -332,40 +352,36 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     return rejectedPromise("The following problem found in the Capacity Plan definition: <strong>" + error + "</strong>. " +
                         "Please correct the app settings:<pre>" + this.getSetting("capacityPlan") + "</pre>");
                 }
-                var milestones = contextItems[0];
-                this.project = contextItems[1];
+                this.project = contextItems[0];
+                this.iteration = contextItems[1][0];
+
+                var milestones = contextItems[2];
                 this.ensureColorsForMilestones(milestones);
                 if (milestones.length === 0) {
                     return rejectedPromise("No milestone specified. Set milestone filter in your page settings or choose milestone in the app settings.");
                 }
-                this.teamFeatures = contextItems[2];
+
+                this.teamFeatures = contextItems[3];
                 if (this.teamFeatures.length === 0 && teamFeatureIds.length > 0) {
-                    return rejectedPromise("None of the Team Features specified in the app settings, ID: <strong>" + teamFeatureIds.join(", ") + "</strong>, " +
+                    return rejectedPromise("None of the Portfolio Items specified in the app settings: <strong>" + teamFeatureIds.join(", ") + "</strong>, " +
                         "exist in this project. Please correct the app settings or change the project.");
                 }
-                this.iteration = contextItems[3][0];
-                var query = chainedExpression("OR", milestones.map(function (milestone) {
+
+                var loadParentsByMilestone = this.loadParentItems(chainedExpression("OR", milestones.map(function (milestone) {
                     return "Milestones.ObjectID contains " + milestone.getId();
-                }));
-                var filter = Rally.data.wsapi.Filter.fromQueryString(query);
-                var context = {project: this.getProjectId() ? "/project/" + this.getProjectId() : null};
+                })));
+
+                var loadParentsByTags = tags.length === 0 ? [] : this.loadParentItems(chainedExpression("OR", tags.map(function (tag) {
+                    return "(Tags.Name = \"" + tag + "\") OR (Name contains \"[" + tag + "]\")";
+                })));
+
                 return promiseAll(
-                    ["PortfolioItem", "HierarchicalRequirement", "Defect"].map(function (artifactType) {
-                        return Ext.create('Rally.data.wsapi.Store', {
-                            model: artifactType,
-                            filters: filter,
-                            fetch: ["ObjectID", "Milestones", "Parent", "PortfolioItem"],
-                            context: context,
-                            autoLoad: true,
-                            limit: Infinity
-                        }).load();
-                    })
+                    [loadParentsByMilestone, loadParentsByTags]
                 ).then({
                     success: function (results) {
-                        var artifactIds = [].concat.apply([], results).map(function (record) {
-                            return +record.raw.ObjectID;
-                        });
-                        return this.getConfigForChart(artifactIds, milestones, this.teamFeatures);
+                        var parentIdsByMilestone = collectIds([].concat.apply([], results[0]));
+                        var parentIdsByTag = collectIds([].concat.apply([], results[1]));
+                        return this.getConfigForChart(parentIdsByMilestone, milestones, parentIdsByTag, tags, this.teamFeatures);
                     },
                     scope: this
                 });
@@ -374,14 +390,26 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         });
     },
 
-    getConfigForChart: function (artifactIds, milestones, teamFeatures) {
-        var teamFeatureIds = teamFeatures.map(function (teamFeature) {
-            return +teamFeature.get("ObjectID");
-        });
+    loadParentItems: function (query) {
+        var context = {project: this.getProjectId() ? "/project/" + this.getProjectId() : null};
+        return promiseAll(["PortfolioItem", "HierarchicalRequirement", "Defect"].map(function (artifactType) {
+            return Ext.create('Rally.data.wsapi.Store', {
+                model: artifactType,
+                filters: Rally.data.wsapi.Filter.fromQueryString(query),
+                fetch: ["ObjectID", "Milestones", "Parent", "PortfolioItem"],
+                context: context,
+                autoLoad: true,
+                limit: Infinity
+            }).load();
+        }));
+    },
+
+    getConfigForChart: function (parentIdsByMilestone, milestones, parentIdsByTag, tags, teamFeatures) {
+        var teamFeatureIds = collectIds(teamFeatures);
         var query = {
             _ProjectHierarchy: this.projectId,
             $and: [
-                {_ItemHierarchy: {$in: artifactIds}}
+                {_ItemHierarchy: {$in: parentIdsByMilestone}}
             ],
             _TypeHierarchy: {$in: ["Defect", "HierarchicalRequirement"]},
             Children: null
@@ -389,31 +417,46 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         if (teamFeatureIds.length > 0) {
             query.$and.push({_ItemHierarchy: {$in: teamFeatureIds}});
         }
+        if (parentIdsByTag.length > 0) {
+            query.$and.push({_ItemHierarchy: {$in: parentIdsByTag}});
+        }
         var fetchFields = ["_ValidFrom", "_ValidTo", "ObjectID", "FormattedID", "PlanEstimate", "ScheduleState"];
         var debug = this.getSetting("debug");
         var storeConfig = {
             listeners: {
                 load: function (store, data, success) {
+                    var label = "*** MILESTONE BURNUP " + milestones.map(function (milestone) {
+                            return milestone.get("Name");
+                        }).join(", ");
+                    if (teamFeatureIds) {
+                        label += "; " + teamFeatures.map(function (milestone) {
+                                return milestone.get("FormattedID");
+                            }).join(", ");
+                    }
+                    if (tags) {
+                        label += "; [" + tags.join("][") + "]";
+                    }
+                    label += " *** ";
                     if (debug) {
-                        console.debug("[DEBUG] Data snapshots for chart START:");
+                        console.debug(label + "Data snapshots:");
                         console.debug(storeDataToString(data, fetchFields));
 
-                        console.debug("[DEBUG] Query for list of all stories:");
-                        console.debug(workItemQuery(data, function (item) {
-                            return isUserStory(item);
-                        }));
-                        console.debug("[DEBUG] Query for list of all defects:");
-                        console.debug(workItemQuery(data, function (item) {
-                            return isDefect(item);
-                        }));
-
-                        console.debug("[DEBUG] Query for list of not accepted stories:");
+                        console.debug(label + "Query for NOT ACCEPTED stories:");
                         console.debug(workItemQuery(data, function (item) {
                             return isUserStory(item) && !isAccepted(item);
                         }));
-                        console.debug("[DEBUG] Query for list of not accepted defects:");
+                        console.debug(label + "Query for NOT ACCEPTED defects:");
                         console.debug(workItemQuery(data, function (item) {
                             return isDefect(item) && !isAccepted(item);
+                        }));
+
+                        console.debug(label + "Query for ALL stories:");
+                        console.debug(workItemQuery(data, function (item) {
+                            return isUserStory(item);
+                        }));
+                        console.debug(label + "Query for ALL defects:");
+                        console.debug(workItemQuery(data, function (item) {
+                            return isDefect(item);
                         }));
                     }
                 }
@@ -459,10 +502,10 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             storeConfig: storeConfig,
 
             exceptionHandler: loggingSnapshotStoreExceptionHandler,
-            queryErrorMessage: "No work items found for <strong>" + this.getChartTitle(milestones, teamFeatures) + "</strong>.",
+            queryErrorMessage: "No work items found for <strong>" + this.getChartTitle(milestones, tags, teamFeatures, true) + "</strong>.",
 
             chartConfig: {
-                title: {text: this.getChartTitle(milestones, teamFeatures), useHTML: true}
+                title: {text: this.getChartTitle(milestones, tags, teamFeatures, false), useHTML: true}
             }
         };
     },
@@ -514,16 +557,23 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         return result;
     },
 
-    getChartTitle: function (milestones, teamFeatures) {
+    getChartTitle: function (milestones, tags, teamFeatures, inline) {
         var context = this.getContext();
         var title = milestones.map(function (milestone) {
             return formatMilestone(milestone, context);
         }).join(", ");
-        if (teamFeatures && teamFeatures.length > 0) {
+        if (teamFeatures.length > 0) {
             title += ": " + teamFeatures.map(function (teamFeature) {
                     return formatTeamFeature(teamFeature, context);
                 }).join(", ");
         }
-        return title + " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
+        if (tags.length > 0) {
+            console.log(tags);
+            title += tags.map(function (tag) {
+                return "<span style='background-color: #C4D8E8; border-radius: 3px; margin: 0 0 0 5px; padding: 0 4px; font-size: 90%'>" + tag + "</span>";
+            }).join("");
+        }
+        title += " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
+        return inline ? title : "<div style='margin-top: -5px'>" + title + "</div>";
     }
 }, dev ? dev.app : null));

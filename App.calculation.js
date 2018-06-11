@@ -1,9 +1,5 @@
 Ext.define("My.BurnUpCalculation", {
 
-    TARGET_DATE: "Target Date",
-    PROJECTED_DATE: "Projected Date",
-    COMPLETED: "Completed",
-
     /**
      * @param {Object} config
      * @param {Object} data
@@ -110,7 +106,7 @@ Ext.define("My.BurnUpCalculation", {
                     }
                     var velocity = capacityProvider.idealBurnUp(index);
                     if (velocity !== null) {
-                        footer.push("Ideal burnup: " + velocity.toFixed(2));
+                        footer.push("Ideal burnup: <b>" + velocity.toFixed(2) + "</b>");
                     }
                     if (footer) {
                         tooltip += "<div style='padding-top: 0.8em; text-align: center; font-size: 0.9em'>" + footer.join("<br/>") + "</div>";
@@ -213,7 +209,7 @@ Ext.define("My.BurnUpCalculation", {
             var idealSeries = projectionCalculator.projectionSeries(targetDateIndex, plannedData[targetDateIndex], targetDateIndex);
             this.capacityProvider.idealSeries = idealSeries;
             this.addSeriesLine(data, "Ideal", idealSeries, {dashStyle: "Dot"});
-            this.addSubtitleText(this.TARGET_DATE + ": " + formatDate(this.calcConfig.targetDate));
+            this.addSubtitleText("Target Date" + ": " + formatDate(this.calcConfig.targetDate));
         }
         var trendControlIndex = todayIndex;
         // when scope completed
@@ -250,7 +246,7 @@ Ext.define("My.BurnUpCalculation", {
                     projectedDateIndex = trendSeries.length - 1;
                     this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
                     if (!completedIndex && this.projectedEndDate) {
-                        this.addSubtitleText(this.PROJECTED_DATE + ": " + formatDate(this.projectedEndDate));
+                        this.addSubtitleText("Projected Date" + ": " + formatDate(this.projectedEndDate));
                     }
                 }
             }
@@ -270,7 +266,7 @@ Ext.define("My.BurnUpCalculation", {
             plannedData.splice(spliceIndex, deleteCount);
             this.getSeriesData(data, "In Progress").splice(spliceIndex, deleteCount);
             this.getSeriesData(data, "Completed").splice(spliceIndex, deleteCount);
-            this.addSubtitleText(this.COMPLETED + ": " + formatDate(dates[completedIndex]));
+            this.addSubtitleText("Accepted" + ": " + formatDate(dates[completedIndex]));
         } else {
             // truncate not interesting data from the right
             var ifEmpty = function(index, ifEmpty) {
@@ -306,11 +302,11 @@ Ext.define("My.BurnUpCalculation", {
             }
         }
         this.addVerticalLine("Today", this.findDateIndex(dates, config.today, true), {color: "#AAA", dashStyle: "ShortDash"});
-        this.addVerticalLine(this.TARGET_DATE, this.findDateIndex(dates, config.targetDate, true));
+        this.addVerticalLine("Target Date", this.findDateIndex(dates, config.targetDate, true));
         if (completedIndex) {
-            this.addVerticalLine(this.COMPLETED, completedIndex, {color: "#774"});
+            this.addVerticalLine("Accepted", completedIndex, {color: "#774"});
         } else if (projectedEndIndex) {
-            this.addVerticalLine(this.PROJECTED_DATE, projectedEndIndex, {dashStyle: "ShortDash"});
+            this.addVerticalLine("Projected Date", projectedEndIndex, {dashStyle: "ShortDash"});
         }
     },
 

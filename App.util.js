@@ -35,6 +35,12 @@ function promiseAll(array) {
 }
 
 
+function collectIds(objects) {
+    return objects.map(function (object) {
+        return +object.raw.ObjectID;
+    });
+}
+
 function getRallyRecordType(record) {
     return record && record.getData()._type;
 }
