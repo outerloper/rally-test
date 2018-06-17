@@ -60,13 +60,20 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             },
             config: defaultConfig
         });
-        settingsFields.push({name: "teamFeatures", xtype: "textfield", label: "Take only these Team Features: (IDs)", config: defaultConfig});
+        settingsFields.push({
+            name: "teamFeatures",
+            xtype: "textfield",
+            label: "<abbr title='One or more IDs of Portfolio Items, of which story or defect\n" +
+            "must be a direct or indirect child, for example:\n\n" +
+            "TF12345, FEA1234, PRJ123, PGM12\n\n" +
+            "For a Team Feature, you can omit letter prefix (TF).'>Portfolio Items</abbr>:", config: defaultConfig
+        });
         settingsFields.push({
             name: "tags",
             xtype: "textfield",
-            label: "Only items with these <abbr title='Comma separated list of tags. At least one must match. Tags are inherited from parents, like milestones.\n\n" +
+            label: "<abbr title='Comma separated list of tags. At least one must match. Tags are inherited from parents, like milestones.\n\n" +
             "Instead of assigning tags to your items in a normal way, you can use naming convention - include\n" +
-            "in your item&apos;s name keywords enclosed in square brackets, for example: \"[integration] As a user, I...\".'>tags</abbr>:",
+            "in your item&apos;s name keywords enclosed in square brackets, for example: \"[integration] As a user, I...\".'>Tags</abbr>:",
             config: defaultConfig
         });
         settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until:", config: dateFieldConfig});
@@ -168,12 +175,12 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         return this.getContext().getProject().ObjectID;
     },
 
-    getTeamFeatureIds: function () {
-        var teamFeatures = this.getSetting("teamFeatures");
-        if (!teamFeatures) {
+    getPortfolioItemIds: function () {
+        var portfolioItems = this.getSetting("teamFeatures");
+        if (!portfolioItems) {
             return [];
         }
-        return teamFeatures.toString().split(/\s*[,;\s]\s*/).filter(function (id) {
+        return portfolioItems.toString().split(/\s*[,;\s]\s*/).filter(function (id) {
             return id !== "";
         }).map(function (id) {
             return id.match(/^\d+$/) ? "TF" + id : id.toUpperCase();
@@ -329,7 +336,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     },
 
     getDataForChart: function () {
-        var teamFeatureIds = this.getTeamFeatureIds();
+        var portfolioItemIds = this.getPortfolioItemIds();
         var tags = this.getTags();
         return promiseAll([
             !this.getProjectId() ? this.getProjectId() : Rally.data.ModelFactory.getModel({type: "Project"}).then({
@@ -351,12 +358,15 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 },
                 scope: this
             }),
-            teamFeatureIds.length === 0 ? [] : Ext.create("Rally.data.wsapi.Store", {
-                model: "PortfolioItem/TeamFeature",
-                filters: Rally.data.wsapi.Filter.fromQueryString(chainedExpression("OR", teamFeatureIds.map(function (id) {
+            portfolioItemIds.length === 0 ? [] : Ext.create("Rally.data.wsapi.Store", {
+                model: "PortfolioItem",
+                filters: Rally.data.wsapi.Filter.fromQueryString(chainedExpression("OR", portfolioItemIds.map(function (id) {
                     return "FormattedID = " + id;
                 }))),
-                scope: this
+                scope: this,
+                context: {
+                    projectScopeUp: true
+                }
             }).load()
         ]).then({
             success: function (contextItems) {
@@ -375,9 +385,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     return rejectedPromise("No milestone specified. Set milestone filter in your page settings or choose milestone in the app settings.");
                 }
 
-                this.teamFeatures = contextItems[3];
-                if (this.teamFeatures.length === 0 && teamFeatureIds.length > 0) {
-                    return rejectedPromise("None of the Portfolio Items specified in the app settings: <strong>" + teamFeatureIds.join(", ") + "</strong>, " +
+                this.portfolioItems = filterOutUnwantedPortfolioItems(this.getPortfolioItemIds(), contextItems[3]);
+                if (this.portfolioItems.length === 0 && portfolioItemIds.length > 0) {
+                    return rejectedPromise("None of the Portfolio Items specified in the app settings: <strong>" + portfolioItemIds.join(", ") + "</strong>, " +
                         "exist in this project. Please correct the app settings or change the project.");
                 }
 
@@ -395,7 +405,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     success: function (results) {
                         var parentIdsByMilestone = collectIds([].concat.apply([], results[0]));
                         var parentIdsByTag = collectIds([].concat.apply([], results[1]));
-                        return this.getConfigForChart(parentIdsByMilestone, milestones, parentIdsByTag, tags, this.teamFeatures, this.project);
+                        return this.getConfigForChart(parentIdsByMilestone, milestones, parentIdsByTag, tags, this.portfolioItems, this.project);
                     },
                     scope: this
                 });
@@ -418,8 +428,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         }));
     },
 
-    getConfigForChart: function (parentIdsByMilestone, milestones, parentIdsByTag, tags, teamFeatures, project) {
-        var teamFeatureIds = collectIds(teamFeatures);
+    getConfigForChart: function (parentIdsByMilestone, milestones, parentIdsByTag, tags, portfolioItems, project) {
+        var portfolioItemIds = collectIds(portfolioItems);
         var query = {
             _ProjectHierarchy: this.projectId,
             $and: [
@@ -428,8 +438,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             _TypeHierarchy: {$in: ["Defect", "HierarchicalRequirement"]},
             Children: null
         };
-        if (teamFeatureIds.length > 0) {
-            query.$and.push({_ItemHierarchy: {$in: teamFeatureIds}});
+        if (portfolioItemIds.length > 0) {
+            query.$and.push({_ItemHierarchy: {$in: portfolioItemIds}});
         }
         if (parentIdsByTag.length > 0) {
             query.$and.push({_ItemHierarchy: {$in: parentIdsByTag}});
@@ -447,7 +457,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             useHttpPost: true
         };
         if (debug) {
-            storeConfig.listeners = {load: createLogger(milestones, teamFeatures, tags, project, fetchFields)};
+            storeConfig.listeners = {load: createLogger(milestones, portfolioItems, tags, project, fetchFields)};
         }
 
         var lastWorkingDay = lastBusinessDay(new Date());
@@ -481,10 +491,10 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             storeConfig: storeConfig,
 
             exceptionHandler: loggingSnapshotStoreExceptionHandler,
-            queryErrorMessage: "No work items found for <strong>" + this.getChartTitle(milestones, tags, teamFeatures, true) + "</strong>.",
+            queryErrorMessage: "No work items found for <strong>" + this.getChartTitle(milestones, tags, portfolioItems, true) + "</strong>.",
 
             chartConfig: {
-                title: {text: this.getChartTitle(milestones, tags, teamFeatures, false), useHTML: true}
+                title: {text: this.getChartTitle(milestones, tags, portfolioItems, false), useHTML: true}
             }
         };
     },
@@ -536,14 +546,14 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         return result;
     },
 
-    getChartTitle: function (milestones, tags, teamFeatures, inlineDisplay) {
+    getChartTitle: function (milestones, tags, portfolioItems, inlineDisplay) {
         var context = this.getContext();
         var title = milestones.map(function (milestone) {
             return formatMilestone(milestone, context);
         }).join(", ");
-        if (teamFeatures.length > 0) {
-            title += ": " + teamFeatures.map(function (teamFeature) {
-                    return formatTeamFeature(teamFeature, context);
+        if (portfolioItems.length > 0) {
+            title += ": " + portfolioItems.map(function (portfolioItem) {
+                    return formatPortfolioItem(portfolioItem, context);
                 }).join(", ");
         }
         if (tags.length > 0) {

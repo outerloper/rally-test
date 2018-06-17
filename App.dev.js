@@ -43,7 +43,7 @@ window.dev = {
     app: {
         config: {
             defaultSettings: {
-                capacityPlan: "0.5 2017-12-15 1.5 2017-12-20\n0.0 2018-01-10 3 2018-01-25\n5",
+                // capacityPlan: "0.5 2017-12-15 1.5 2017-12-20\n0.0 2018-01-10 3 2018-01-25\n5",
                 // capacityPlan: "2 2017-03-31 4 2017-05-03 6 2017-07-08 2 ",
                 // capacityPlan: "0 2018-01-28 5",
                 // capacityPlan: "0 2018-01-28 -2 2018-01-30 5", // invalid
@@ -57,23 +57,24 @@ window.dev = {
                 // capacityPlan: "0", // should be ignored/behave like no plan defined
                 //customTrendStartDate: "2016-03-01",
                 // customTrendStartDate: "2017-11-27",
-                //customStartDate: "2016-05-05",
+                // customStartDate: "2016-04-03",
                 maxDaysAfterTargetDate: 45,
                 markAuxDates: true,
                 drawIterations: true,
                 // displayProjectName: false,
                 // displayWidth: 50,
-                tags: ["activation", "report"],
+                // tags: ["activation", "report"],
                 // project: "/project/52219765529", // csm
                 // project: "/project/52953911025", // fm
                 // project: "/project/52220062189", // pm
-                // project: "/project/52220062990", // sm
+                project: "/project/52220062990", // sm
                 // project: "/project/52121885700", // FPM Charlie
                 // project: "/project/53630224881", // smk
-                project: "/project/53630226508", // smd
+                // project: "/project/53630226508", // smd
                 //project: "/project/52219769418", // slm
                 //project: "/project/52219764059", // s
                 // project: "/project/52219602590", // a
+                // project: "/project/27154375449", // S
                 //project: "/project/29475348986", // css/int
                 //project: "/project/27159833906", // css
                 // project: "/project/27154375449", // sbr
@@ -82,7 +83,9 @@ window.dev = {
                 // teamFeatures: "TF13374, TF13360, TF18854, TF19226, TF13393, TF13397", // 16.0
                 // teamFeatures: "77426086652, 59291054867, 59287501066, 59286613915, 59284079199, 80859898716", // 16.0
                 // teamFeatures: "TF29957, TF29959, TF28954", // 16.2
-                teamFeatures: "TF29957", // iae
+                // teamFeatures: "TF29957", // iae
+                teamFeatures: "FEA12099", // fea:iae
+                teamFeatures: "prj3848", // prj:iae
                 // teamFeatures: "29957 29959;tf28954", // 16.2
                 // teamFeatures: "NON_EX", // non existing
                 debug: true,
@@ -91,7 +94,8 @@ window.dev = {
         },
 
         getMilestoneIds: function () {
-            //return [55779773422]; // b
+            // return [55779773422]; // b
+            // return [60039743732]; // tech b
             //return [53884362051]; // 14.3
             //return [60559020830]; // d14.5
             // return [53823409519]; // d15.1
@@ -104,8 +108,8 @@ window.dev = {
             // return [53888803641]; // d16.0
             // return [54389009403]; // s16.0
             // return [87003447824]; // d16.1
-            // return [130767064724]; // d16.2
-            return [130767061600]; // r16.2
+            return [130767064724]; // d16.2
+            // return [130767061600]; // r16.2
             // return [205270911736]; // CSS-INT 9.0 (with PPMFeas)
             //return [49774672980]; // css/int/rel7.3
             //return [53823409519, 53823678379];

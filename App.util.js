@@ -66,13 +66,13 @@ function formatProject(project, page) {
         : project.get("Name");
 }
 
-function formatTeamFeature(teamFeature, context) {
-    return "<a target='_blank' style='color:#274b6d' href='" + getTeamFeatureUrl(teamFeature, context) + "'><strong style='font-size:0.95em'>" +
-        teamFeature.get("FormattedID") + "</strong> " + teamFeature.get("Name") + "</a>";
+function formatPortfolioItem(portfolioItem, context) {
+    return "<a target='_blank' style='color:#274b6d' href='" + getPortfolioItemUrl(portfolioItem, context) + "'><strong style='font-size:0.95em'>" +
+        portfolioItem.get("FormattedID") + "</strong> " + portfolioItem.get("Name") + "</a>";
 }
 
-function getTeamFeatureUrl(teamFeature, context) {
-    return "https://rally1.rallydev.com/#/" + context.getProject().ObjectID + "d/detail" + teamFeature.getUri() + "/userstories";
+function getPortfolioItemUrl(portfolioItem, context) {
+    return "https://rally1.rallydev.com/#/" + context.getProject().ObjectID + "d/detail" + portfolioItem.getUri();
 }
 
 function hasOwnProperties(object, minNumber) {
@@ -170,8 +170,7 @@ function addBusinessDays(date, businessDays) {
     return result;
 }
 
-function lastBusinessDay(date)
-{
+function lastBusinessDay(date) {
     var weekDay = new Date(date).getDay();
     return weekDay > 0 && weekDay < 6 ? date : lastBusinessDay(addBusinessDays(date, -1));
 }
@@ -216,13 +215,13 @@ function parseCapacityPlan(capacityPlanDefinition) {
     return capacityPlan;
 }
 
-function createLogger(milestones, teamFeatures, tags, project, fetchFields) {
+function createLogger(milestones, portfolioItems, tags, project, fetchFields) {
     return function (store, data, success) {
         var label = "***** DEBUG INFO for MILESTONE BURNUP " + milestones.map(function (milestone) {
                 return "<> " + milestone.get("Name");
             }).join(", ");
-        if (teamFeatures) {
-            label += ": " + teamFeatures.map(function (milestone) {
+        if (portfolioItems) {
+            label += ": " + portfolioItems.map(function (milestone) {
                     return milestone.get("FormattedID");
                 }).join(", ");
         }
@@ -249,4 +248,10 @@ function createLogger(milestones, teamFeatures, tags, project, fetchFields) {
             return isDefect(item) && !isAccepted(item);
         }));
     };
+}
+
+function filterOutUnwantedPortfolioItems(ids, items) {
+    return items.filter(function (item) {
+        return ids.indexOf(item.get("FormattedID")) !== -1;
+    });
 }
