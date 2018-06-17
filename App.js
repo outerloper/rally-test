@@ -64,8 +64,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         settingsFields.push({
             name: "tags",
             xtype: "textfield",
-            label: "Only items with these tags/<abbr title='You can mark stories/defects/features by putting keywords surrounded with square brackets " +
-            "in their names, e.g. \"[integration]\"'>markers</abbr>:",
+            label: "Only items with these <abbr title='Comma separated list of tags. At least one must match. Tags are inherited from parents, like milestones.\n\n" +
+            "Instead of assigning tags to your items in a normal way, you can use naming convention - include\n" +
+            "in your item&apos;s name keywords enclosed in square brackets, for example: \"[integration] As a user, I...\".'>tags</abbr>:",
             config: defaultConfig
         });
         settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until:", config: dateFieldConfig});
@@ -80,8 +81,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             name: "capacityPlan",
             xtype: "textarea",
             label: "Model projection lines with a specific capacity plan (provide average daily capacity values separated by the dates when they change &ndash; <abbr title='" +
-            "To express that team capacity is 3 before September, in September&#013;it is going to be doubled and later it is to be 2.5, you would write:&#013;&#013;3 2018-09-01 6 2018-10-01 2.5'>example</abbr>)",
-            height: 55,
+            "When the team capacity is 3 before September, in September 6 and 2.5 later:\n\n" +
+            "3 2018-09-01 6 2018-10-01 2.5'>example</abbr>)",
+            height: 70,
             config: defaultConfig
         });
         settingsFields.push({name: "projectTargetPage", xtype: "textfield", label: "When clicking on a project name, open this page:", config: defaultConfig});
@@ -89,7 +91,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             name: "markAuxDates",
             xtype: "rallycheckboxfield",
             label: "Mark additional key dates on the chart (such dates must be specified in the Milestone's Notes field &ndash; <abbr title='" +
-            "To express that your Code Complete date is on Dec 10&#013;and RC Build is planned on Jan 15, you would write:&#013;&#013;2018-12-10 Code Complete&#013;2019-01-15 RC Build'>example</abbr>)",
+            "When the Code Complete is on Dec 10 and RC Build is planned on Jan 15:\n\n" +
+            "2018-12-10 Code Complete&#013;2019-01-15 RC Build'>example</abbr>)",
             config: checkboxConfig
         });
         settingsFields.push({
@@ -130,7 +133,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         settingsFields.push({
             name: "debug",
             xtype: "rallycheckboxfield",
-            label: "Debug mode (prints diagnostic information in JavaScript console)",
+            label: "Debug mode (prints <abbr title='Use queries that are printed to the console in the Custom List app " +
+            "to figure out what items actually contribute to the chart.'>diagnostic information</abbr> in JavaScript console)",
             config: checkboxConfig
         });
         return settingsFields;
@@ -445,15 +449,15 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             storeConfig.listeners = {load: createLogger(milestones, teamFeatures, tags, project, fetchFields)};
         }
 
-        var lastBusinessDay = lastBusinessDay(new Date());
+        var lastWorkingDay = lastBusinessDay(new Date());
         var targetDate = this.getTargetDate(milestones);
         var maxDaysAfterTargetDate = this.getSetting("maxDaysAfterTargetDate");
         var endDate = targetDate;
         if (!targetDate) {
-            endDate = lastBusinessDay;
-        } else if (lastBusinessDay > targetDate) {
+            endDate = lastWorkingDay;
+        } else if (lastWorkingDay > targetDate) {
             var maxEndDate = addBusinessDays(targetDate, maxDaysAfterTargetDate);
-            endDate = lastBusinessDay > maxEndDate ? lastBusinessDay : maxEndDate;
+            endDate = lastWorkingDay > maxEndDate ? lastWorkingDay : maxEndDate;
         }
         return {
             calculatorType: "My.MilestoneBurnUpCalculator",
