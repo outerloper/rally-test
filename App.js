@@ -445,15 +445,15 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             storeConfig.listeners = {load: createLogger(milestones, teamFeatures, tags, project, fetchFields)};
         }
 
-        var today = new Date();
+        var lastBusinessDay = lastBusinessDay(new Date());
         var targetDate = this.getTargetDate(milestones);
         var maxDaysAfterTargetDate = this.getSetting("maxDaysAfterTargetDate");
         var endDate = targetDate;
         if (!targetDate) {
-            endDate = today;
-        } else if (today > targetDate) {
+            endDate = lastBusinessDay;
+        } else if (lastBusinessDay > targetDate) {
             var maxEndDate = addBusinessDays(targetDate, maxDaysAfterTargetDate);
-            endDate = today > maxEndDate ? today : maxEndDate;
+            endDate = lastBusinessDay > maxEndDate ? lastBusinessDay : maxEndDate;
         }
         return {
             calculatorType: "My.MilestoneBurnUpCalculator",

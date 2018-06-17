@@ -160,13 +160,13 @@ function addBusinessDays(date, businessDays) {
     if (businessDays) {
         var oldTimezoneOffset = result.getTimezoneOffset();
         var days = result.getDate();
-        var d = result.getDay();
+        var dayOfMonth = result.getDay();
         var step = businessDays > 0 ? 1 : -1;
         var weekDayStep = businessDays > 0 ? 1 : 6;
         while (businessDays !== 0) {
             days += step;
-            d = (d + weekDayStep) % 7;
-            if (d !== 0 && d !== 6) {
+            dayOfMonth = (dayOfMonth + weekDayStep) % 7;
+            if (dayOfMonth !== 0 && dayOfMonth !== 6) {
                 businessDays -= step;
             }
         }
@@ -177,6 +177,12 @@ function addBusinessDays(date, businessDays) {
         }
     }
     return result;
+}
+
+function lastBusinessDay(date)
+{
+    var weekDay = new Date(date).getDay();
+    return weekDay > 0 && weekDay < 6 ? date : lastBusinessDay(addBusinessDays(date, -1));
 }
 
 function parseCapacityPlan(capacityPlanDefinition) {
@@ -382,7 +388,7 @@ function createLogger(milestones, teamFeatures, tags, project, fetchFields) {
     },
 
     adjustChartStart: function (data) {
-        var firstInProgressIndex = this.findDateIndex(data.categories, this.calcConfig.today, false, data.categories.length);
+        var firstInProgressIndex = this.findDateIndex(data.categories, lastBusinessDay(this.calcConfig.today), false, data.categories.length);
         data.series.forEach(function (series) {
             if (series.name !== "Scope") {
                 for (var i = 0; i < series.data.length; i++) {
@@ -524,7 +530,7 @@ function createLogger(milestones, teamFeatures, tags, project, fetchFields) {
             this.addSubtitleText("Accepted" + ": " + formatDate(dates[completedIndex]));
         } else {
             // truncate not interesting data from the right
-            var ifEmpty = function(index, ifEmpty) {
+            var ifEmpty = function (index, ifEmpty) {
                 return index === -1 || index === null || index === undefined ? ifEmpty : index;
             };
             spliceIndex = Math.max(ifEmpty(todayIndex, 0), ifEmpty(targetDateIndex, 0), Math.min(ifEmpty(projectedDateIndex, null), ifEmpty(maxIndex, null))) + 1;
@@ -708,7 +714,7 @@ Ext.define("My.FixedProjectionCalculator", {
 
     projectionSeries: function (endIndex, endValue, indexLimit, valueLimit) {
         var projectionFactor = this.projectionFactor(endIndex, endValue);
-        if (projectionFactor && indexLimit !== 0) {
+        if (projectionFactor && projectionFactor > 0 && indexLimit !== 0) {
             var data = [];
             var i;
             for (i = 0; i < this.startIndex; i++) {
@@ -1216,15 +1222,15 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             storeConfig.listeners = {load: createLogger(milestones, teamFeatures, tags, project, fetchFields)};
         }
 
-        var today = new Date();
+        var lastBusinessDay = lastBusinessDay(new Date());
         var targetDate = this.getTargetDate(milestones);
         var maxDaysAfterTargetDate = this.getSetting("maxDaysAfterTargetDate");
         var endDate = targetDate;
         if (!targetDate) {
-            endDate = today;
-        } else if (today > targetDate) {
+            endDate = lastBusinessDay;
+        } else if (lastBusinessDay > targetDate) {
             var maxEndDate = addBusinessDays(targetDate, maxDaysAfterTargetDate);
-            endDate = today > maxEndDate ? today : maxEndDate;
+            endDate = lastBusinessDay > maxEndDate ? lastBusinessDay : maxEndDate;
         }
         return {
             calculatorType: "My.MilestoneBurnUpCalculator",

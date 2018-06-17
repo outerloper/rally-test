@@ -127,7 +127,7 @@ Ext.define("My.BurnUpCalculation", {
     },
 
     adjustChartStart: function (data) {
-        var firstInProgressIndex = this.findDateIndex(data.categories, this.calcConfig.today, false, data.categories.length);
+        var firstInProgressIndex = this.findDateIndex(data.categories, lastBusinessDay(this.calcConfig.today), false, data.categories.length);
         data.series.forEach(function (series) {
             if (series.name !== "Scope") {
                 for (var i = 0; i < series.data.length; i++) {
@@ -269,7 +269,7 @@ Ext.define("My.BurnUpCalculation", {
             this.addSubtitleText("Accepted" + ": " + formatDate(dates[completedIndex]));
         } else {
             // truncate not interesting data from the right
-            var ifEmpty = function(index, ifEmpty) {
+            var ifEmpty = function (index, ifEmpty) {
                 return index === -1 || index === null || index === undefined ? ifEmpty : index;
             };
             spliceIndex = Math.max(ifEmpty(todayIndex, 0), ifEmpty(targetDateIndex, 0), Math.min(ifEmpty(projectedDateIndex, null), ifEmpty(maxIndex, null))) + 1;
@@ -453,7 +453,7 @@ Ext.define("My.FixedProjectionCalculator", {
 
     projectionSeries: function (endIndex, endValue, indexLimit, valueLimit) {
         var projectionFactor = this.projectionFactor(endIndex, endValue);
-        if (projectionFactor && indexLimit !== 0) {
+        if (projectionFactor && projectionFactor > 0 && indexLimit !== 0) {
             var data = [];
             var i;
             for (i = 0; i < this.startIndex; i++) {

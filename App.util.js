@@ -151,13 +151,13 @@ function addBusinessDays(date, businessDays) {
     if (businessDays) {
         var oldTimezoneOffset = result.getTimezoneOffset();
         var days = result.getDate();
-        var d = result.getDay();
+        var dayOfMonth = result.getDay();
         var step = businessDays > 0 ? 1 : -1;
         var weekDayStep = businessDays > 0 ? 1 : 6;
         while (businessDays !== 0) {
             days += step;
-            d = (d + weekDayStep) % 7;
-            if (d !== 0 && d !== 6) {
+            dayOfMonth = (dayOfMonth + weekDayStep) % 7;
+            if (dayOfMonth !== 0 && dayOfMonth !== 6) {
                 businessDays -= step;
             }
         }
@@ -168,6 +168,12 @@ function addBusinessDays(date, businessDays) {
         }
     }
     return result;
+}
+
+function lastBusinessDay(date)
+{
+    var weekDay = new Date(date).getDay();
+    return weekDay > 0 && weekDay < 6 ? date : lastBusinessDay(addBusinessDays(date, -1));
 }
 
 function parseCapacityPlan(capacityPlanDefinition) {
