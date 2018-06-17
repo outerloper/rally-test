@@ -910,8 +910,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         settingsFields.push({
             name: "debug",
             xtype: "rallycheckboxfield",
-            label: "Debug mode (prints <abbr title='Use queries that are printed to the console in the Custom List app " +
-            "to figure out what items actually contribute to the chart.'>diagnostic information</abbr> in JavaScript console)",
+            label: "Debug mode (prints <abbr title='Use queries that are printed to the console together with the Custom List app (paste them into the Query settings field)\n" +
+            "to identify which actual items (stories and defects) contribute to the chart. Note that such list is not dynamic\n" +
+            "and it contains only the items matching the chart criteria from the moment it was generated.'>diagnostic information</abbr> in JavaScript console)",
             config: checkboxConfig
         });
         return settingsFields;
