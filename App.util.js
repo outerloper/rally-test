@@ -209,3 +209,38 @@ function parseCapacityPlan(capacityPlanDefinition) {
     capacityPlan.dates.push(dateToIsoString(new Date(9999999999999)));
     return capacityPlan;
 }
+
+function createLogger(milestones, teamFeatures, tags, project, fetchFields) {
+    return function (store, data, success) {
+        var label = "***** DEBUG INFO for MILESTONE BURNUP " + milestones.map(function (milestone) {
+                return "<> " + milestone.get("Name");
+            }).join(", ");
+        if (teamFeatures) {
+            label += ": " + teamFeatures.map(function (milestone) {
+                    return milestone.get("FormattedID");
+                }).join(", ");
+        }
+        if (tags.length > 0) {
+            label += " [" + tags.join("][") + "]";
+        }
+        label += " - " + project.get("Name") + " ***** ";
+        var log = function (title, content) {
+            console.debug(label + title + ":");
+            console.debug(content);
+            console.debug();
+        };
+        log("DATA SNAPSHOTS", storeDataToString(data, fetchFields));
+        log("Query for ALL STORIES", workItemQuery(data, function (item) {
+            return isUserStory(item);
+        }));
+        log("Query for ALL DEFECTS", workItemQuery(data, function (item) {
+            return isDefect(item);
+        }));
+        log("Query for NOT YET ACCEPTED STORIES", workItemQuery(data, function (item) {
+            return isUserStory(item) && !isAccepted(item);
+        }));
+        log("Query for NOT YET ACCEPTED DEFECTS", workItemQuery(data, function (item) {
+            return isDefect(item) && !isAccepted(item);
+        }));
+    };
+}

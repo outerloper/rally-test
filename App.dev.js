@@ -1,5 +1,5 @@
 // code used in development and testing
-
+// usage: log in to Rally and load this file with browser (file://)
 
 
 function chartData(dateFrom, days, series) {
@@ -61,7 +61,8 @@ window.dev = {
                 maxDaysAfterTargetDate: 45,
                 markAuxDates: true,
                 drawIterations: true,
-                displayWidth: 50,
+                // displayProjectName: false,
+                // displayWidth: 50,
                 tags: ["activation", "report"],
                 // project: "/project/52219765529", // csm
                 // project: "/project/52953911025", // fm

@@ -18,6 +18,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     getSettingsFields: function () {
         var milestones = this.getSetting("milestones");
         var defaultConfig = {width: 400, labelWidth: 210, labelAlign: "right"};
+        var dateFieldConfig = Ext.merge(Ext.clone(defaultConfig), {format: "Y-m-d"});
         var checkboxConfig = {labelWidth: 380};
         var currentProjectText = "-- Current Project --";
         var contextTimebox = this.getContextTimebox();
@@ -67,8 +68,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             "in their names, e.g. \"[integration]\"'>markers</abbr>:",
             config: defaultConfig
         });
-        settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until:", config: defaultConfig});
-        settingsFields.push({name: "customTrendStartDate", xtype: "rallydatefield", label: "Start projection lines from:", config: defaultConfig});
+        settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until:", config: dateFieldConfig});
+        settingsFields.push({name: "customTrendStartDate", xtype: "rallydatefield", label: "Start projection lines from:", config: dateFieldConfig});
         settingsFields.push({
             name: "maxDaysAfterTargetDate",
             xtype: "rallynumberfield",
@@ -95,6 +96,12 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             name: "drawIterations",
             xtype: "rallycheckboxfield",
             label: "Draw iteration boundaries on chart's background",
+            config: checkboxConfig
+        });
+        settingsFields.push({
+            name: "displayProjectName",
+            xtype: "rallycheckboxfield",
+            label: "Display project name",
             config: checkboxConfig
         });
         settingsFields.push({
@@ -135,7 +142,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             markAuxDates: true,
             projectTargetPage: "iterationstatus",
             displayWidth: 100,
-            drawIterations: true
+            drawIterations: true,
+            displayProjectName: true
         }
     },
 
@@ -188,6 +196,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
 
     layout: "fit",
 
+    // main
     launch: function () {
         this.getDataForChart().then({
             success: function (chartSetup) {
@@ -381,7 +390,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     success: function (results) {
                         var parentIdsByMilestone = collectIds([].concat.apply([], results[0]));
                         var parentIdsByTag = collectIds([].concat.apply([], results[1]));
-                        return this.getConfigForChart(parentIdsByMilestone, milestones, parentIdsByTag, tags, this.teamFeatures);
+                        return this.getConfigForChart(parentIdsByMilestone, milestones, parentIdsByTag, tags, this.teamFeatures, this.project);
                     },
                     scope: this
                 });
@@ -404,7 +413,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         }));
     },
 
-    getConfigForChart: function (parentIdsByMilestone, milestones, parentIdsByTag, tags, teamFeatures) {
+    getConfigForChart: function (parentIdsByMilestone, milestones, parentIdsByTag, tags, teamFeatures, project) {
         var teamFeatureIds = collectIds(teamFeatures);
         var query = {
             _ProjectHierarchy: this.projectId,
@@ -423,44 +432,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         var fetchFields = ["_ValidFrom", "_ValidTo", "ObjectID", "FormattedID", "PlanEstimate", "ScheduleState"];
         var debug = this.getSetting("debug");
         var storeConfig = {
-            listeners: {
-                load: function (store, data, success) {
-                    var label = "*** MILESTONE BURNUP " + milestones.map(function (milestone) {
-                            return milestone.get("Name");
-                        }).join(", ");
-                    if (teamFeatureIds) {
-                        label += "; " + teamFeatures.map(function (milestone) {
-                                return milestone.get("FormattedID");
-                            }).join(", ");
-                    }
-                    if (tags) {
-                        label += "; [" + tags.join("][") + "]";
-                    }
-                    label += " *** ";
-                    if (debug) {
-                        console.debug(label + "Data snapshots:");
-                        console.debug(storeDataToString(data, fetchFields));
-
-                        console.debug(label + "Query for NOT ACCEPTED stories:");
-                        console.debug(workItemQuery(data, function (item) {
-                            return isUserStory(item) && !isAccepted(item);
-                        }));
-                        console.debug(label + "Query for NOT ACCEPTED defects:");
-                        console.debug(workItemQuery(data, function (item) {
-                            return isDefect(item) && !isAccepted(item);
-                        }));
-
-                        console.debug(label + "Query for ALL stories:");
-                        console.debug(workItemQuery(data, function (item) {
-                            return isUserStory(item);
-                        }));
-                        console.debug(label + "Query for ALL defects:");
-                        console.debug(workItemQuery(data, function (item) {
-                            return isDefect(item);
-                        }));
-                    }
-                }
-            },
             find: query,
             fetch: fetchFields,
             hydrate: ["ScheduleState"],
@@ -470,6 +441,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             removeUnauthorizedSnapshots: true,
             useHttpPost: true
         };
+        if (debug) {
+            storeConfig.listeners = {load: createLogger(milestones, teamFeatures, tags, project, fetchFields)};
+        }
 
         var today = new Date();
         var targetDate = this.getTargetDate(milestones);
@@ -557,7 +531,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         return result;
     },
 
-    getChartTitle: function (milestones, tags, teamFeatures, inline) {
+    getChartTitle: function (milestones, tags, teamFeatures, inlineDisplay) {
         var context = this.getContext();
         var title = milestones.map(function (milestone) {
             return formatMilestone(milestone, context);
@@ -573,7 +547,9 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 return "<span style='background-color: #C4D8E8; border-radius: 3px; margin: 0 0 0 5px; padding: 0 4px; font-size: 90%'>" + tag + "</span>";
             }).join("");
         }
-        title += " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
-        return inline ? title : "<div style='margin-top: -5px'>" + title + "</div>";
+        if (this.getSetting("displayProjectName")) {
+            title += " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
+        }
+        return inlineDisplay ? title : "<div style='margin-top: -5px; text-align: center'>" + title + "</div>";
     }
 }, dev ? dev.app : null));
