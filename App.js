@@ -25,7 +25,10 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         var settingsFields = [];
         settingsFields.push({ // be careful changing options here, this combo should allow no selection, one and multiple selections and storing previous state for all of these cases
             name: "milestones",
-            label: "Milestone(s)",
+            label: "<abbr title='What do the chart bars and the Scope line mean?\n\n" +
+            "Chart displays historical estimation (Plan Est) of stories and defects assigned to the specified milestone, aggregated by Schedule State.\n" +
+            "Scope is the total estimate. Only leaf stories&apos; estimates count. Milestone assigned to a parent story or portfolio item is implicitly\n" +
+            "propagated to the child items. Items that were assigned to the milestone in the past but no longer are, are not considered in the chart at all.'>Milestone(s)</abbr>",
             xtype: "rallymilestonecombobox",
             editable: true,
             multiSelect: true,
@@ -33,7 +36,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             emptyText: "-- Choose --",
             hideLabel: false,
             autoSelect: false,
-            disabled: getRallyRecordType(contextTimebox) == "milestone",
             forceSelection: "string" != typeof milestones || milestones.indexOf(",") < 0 // workaround for a bug (?) in combo when multiple selection is not repopulated
         });
 
@@ -66,14 +68,14 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             label: "<abbr title='One or more IDs of Portfolio Items, of which story or defect\n" +
             "must be a direct or indirect child, for example:\n\n" +
             "TF12345, FEA1234, PRJ123, PGM12\n\n" +
-            "For a Team Feature, you can omit letter prefix (TF).'>Portfolio Items</abbr>:", config: defaultConfig
+            "For a Team Feature, you can omit the letter prefix (TF).'>Portfolio Items</abbr>:", config: defaultConfig
         });
         settingsFields.push({
             name: "tags",
             xtype: "textfield",
             label: "<abbr title='Comma separated list of tags. At least one must match. Tags are inherited from parents, like milestones.\n\n" +
-            "Instead of assigning tags to your items in a normal way, you can use naming convention - include\n" +
-            "in your item&apos;s name keywords enclosed in square brackets, for example: \"[integration] As a user, I...\".'>Tags</abbr>:",
+            "Instead of assigning tags to the items in a normal way, you can use naming convention - include\n" +
+            "keywords in square brackets in the item&apos;s name, for example: \"[integration] As a user, I...\".'>Tags</abbr>:",
             config: defaultConfig
         });
         settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until:", config: dateFieldConfig});
@@ -415,7 +417,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
     },
 
     loadParentItems: function (query) {
-        var context = {project: this.getProjectId() ? "/project/" + this.getProjectId() : null};
+        var context = {projectScopeUp: true};
         return promiseAll(["PortfolioItem", "HierarchicalRequirement", "Defect"].map(function (artifactType) {
             return Ext.create('Rally.data.wsapi.Store', {
                 model: artifactType,
