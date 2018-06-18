@@ -22,6 +22,7 @@ Ext.define("My.BurnUpCalculation", {
             targetDate: config.targetDate,
             customStartDate: config.customStartDate,
             maxDaysAfterTargetDate: config.maxDaysAfterTargetDate,
+            hideProjectedDateOutOfRange: config.hideProjectedDateOutOfRange,
             customTrendStartDate: config.customTrendStartDate,
             displayWidth: config.displayWidth
         };
@@ -246,7 +247,9 @@ Ext.define("My.BurnUpCalculation", {
                     projectedDateIndex = trendSeries.length - 1;
                     this.projectedEndDate = addBusinessDays(new Date(dates[0]), projectedDateIndex);
                     if (!completedIndex && this.projectedEndDate) {
-                        this.addSubtitleText("Projected Date" + ": " + formatDate(this.projectedEndDate));
+                        if (!this.calcConfig.hideProjectedDateOutOfRange || projectedDateIndex <= maxIndex) {
+                            this.addSubtitleText("Projected Date" + ": " + formatDate(this.projectedEndDate));
+                        }
                     }
                 }
             }

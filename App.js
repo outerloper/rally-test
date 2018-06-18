@@ -17,7 +17,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
 
     getSettingsFields: function () {
         var milestones = this.getSetting("milestones");
-        var defaultConfig = {width: 400, labelWidth: 210, labelAlign: "right"};
+        var defaultConfig = {width: 400, labelWidth: 210};
         var dateFieldConfig = Ext.merge(Ext.clone(defaultConfig), {format: "Y-m-d"});
         var checkboxConfig = {labelWidth: 380};
         var currentProjectText = "-- Current Project --";
@@ -40,6 +40,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
         });
 
         settingsFields.push({html: "<h3>Additional options</h3>", xtype: "label"});
+
+        /// filtering options ///
         settingsFields.push({
             name: "project",
             label: "Project",
@@ -78,6 +80,8 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             "keywords in square brackets in the item&apos;s name, for example: \"[integration] As a user, I...\".'>Tags</abbr>:",
             config: defaultConfig
         });
+
+        /// plot options ///
         settingsFields.push({name: "customStartDate", xtype: "rallydatefield", label: "Ignore data until:", config: dateFieldConfig});
         settingsFields.push({name: "customTrendStartDate", xtype: "rallydatefield", label: "Start projection lines from:", config: dateFieldConfig});
         settingsFields.push({
@@ -95,7 +99,6 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             height: 70,
             config: defaultConfig
         });
-        settingsFields.push({name: "projectTargetPage", xtype: "textfield", label: "When clicking on a project name, open this page:", config: defaultConfig});
         settingsFields.push({
             name: "markAuxDates",
             xtype: "rallycheckboxfield",
@@ -104,18 +107,22 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             "2018-12-10 Code Complete&#013;2019-01-15 RC Build'>example</abbr>)",
             config: checkboxConfig
         });
+
+        /// display options ///
+        settingsFields.push({
+            name: "hideProjectedDateOutOfRange",
+            xtype: "rallycheckboxfield",
+            label: "Hide Projected Date in the subtitle when not visible on the chart",
+            config: checkboxConfig
+        });
         settingsFields.push({
             name: "drawIterations",
             xtype: "rallycheckboxfield",
-            label: "Draw iteration boundaries on chart's background",
+            label: "Draw Iteration boundaries on chart's background",
             config: checkboxConfig
         });
-        settingsFields.push({
-            name: "displayProjectName",
-            xtype: "rallycheckboxfield",
-            label: "Display project name",
-            config: checkboxConfig
-        });
+        settingsFields.push({name: "showProjectName", xtype: "rallycheckboxfield", label: "Show Project name in the title", config: checkboxConfig});
+        settingsFields.push({name: "projectTargetPage", xtype: "textfield", label: "Project name in the title links to:", config: defaultConfig});
         settingsFields.push({
             name: "displayWidth",
             xtype: "combobox",
@@ -132,19 +139,21 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 if (isNaN(value)) {
                     return "Number expected";
                 }
-                var MIN = 20, MAX = 200;
+                var MIN = 10, MAX = 300;
                 if (value < MIN || value > MAX) {
                     return "Value out of allowed range (" + MIN + "-" + MAX + ")";
                 }
                 return true;
             }
         });
+
+        /// advanced options ///
         settingsFields.push({
             name: "debug",
             xtype: "rallycheckboxfield",
             label: "Debug mode (prints <abbr title='Use queries that are printed to the console together with the Custom List app (paste them into the Query settings field)\n" +
             "to identify which actual items (stories and defects) contribute to the chart. Note that such list is not dynamic\n" +
-            "and it contains only the items matching the chart criteria from the moment it was generated.'>diagnostic information</abbr> in JavaScript console)",
+            "and it contains only the items matching the chart criteria from the moment it was generated.'>diagnostic data</abbr> in the JavaScript console)",
             config: checkboxConfig
         });
         return settingsFields;
@@ -157,7 +166,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             projectTargetPage: "iterationstatus",
             displayWidth: 100,
             drawIterations: true,
-            displayProjectName: true
+            showProjectName: true
         }
     },
 
@@ -375,7 +384,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 try {
                     this.capacityPlan = parseCapacityPlan(this.getSetting("capacityPlan"));
                 } catch (error) {
-                    return rejectedPromise("The following problem found in the Capacity Plan definition: <strong>" + error + "</strong>. " +
+                    return rejectedPromise("The following problem found in the Capacity Plan definition: <p>" + error + "</p>. " +
                         "Please correct the app settings:<pre>" + this.getSetting("capacityPlan") + "</pre>");
                 }
                 this.project = contextItems[0];
@@ -389,7 +398,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
 
                 this.portfolioItems = filterOutUnwantedPortfolioItems(this.getPortfolioItemIds(), contextItems[3]);
                 if (this.portfolioItems.length === 0 && portfolioItemIds.length > 0) {
-                    return rejectedPromise("None of the Portfolio Items specified in the app settings: <strong>" + portfolioItemIds.join(", ") + "</strong>, " +
+                    return rejectedPromise("None of the Portfolio Items specified in the app settings: <p>" + portfolioItemIds.join(", ") + "</p>, " +
                         "exist in this project. Please correct the app settings or change the project.");
                 }
 
@@ -485,6 +494,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                     customStartDate: this.getSetting("customStartDate"),
                     customTrendStartDate: this.getSetting("customTrendStartDate"),
                     maxDaysAfterTargetDate: maxDaysAfterTargetDate,
+                    hideProjectedDateOutOfRange: this.getSetting("hideProjectedDateOutOfRange"),
                     displayWidth: this.getSetting("displayWidth")
                 }
             },
@@ -493,7 +503,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
             storeConfig: storeConfig,
 
             exceptionHandler: loggingSnapshotStoreExceptionHandler,
-            queryErrorMessage: "No work items found for <strong>" + this.getChartTitle(milestones, tags, portfolioItems, true) + "</strong>.",
+            queryErrorMessage: "No work items found for <p>" + this.getChartTitle(milestones, tags, portfolioItems, true) + "</p>.",
 
             chartConfig: {
                 title: {text: this.getChartTitle(milestones, tags, portfolioItems, false), useHTML: true}
@@ -564,7 +574,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 return "<span style='background-color: #C4D8E8; border-radius: 3px; margin: 0 0 0 5px; padding: 0 4px; font-size: 90%'>" + tag + "</span>";
             }).join("");
         }
-        if (this.getSetting("displayProjectName")) {
+        if (this.getSetting("showProjectName")) {
             title += " &mdash; " + formatProject(this.project, this.getSetting("projectTargetPage"));
         }
         return inlineDisplay ? title : "<div style='margin-top: -5px; text-align: center'>" + title + "</div>";

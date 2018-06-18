@@ -58,10 +58,11 @@ window.dev = {
                 //customTrendStartDate: "2016-03-01",
                 // customTrendStartDate: "2017-11-27",
                 // customStartDate: "2016-04-03",
-                maxDaysAfterTargetDate: 45,
+                maxDaysAfterTargetDate: 1,
+                hideProjectedDateOutOfRange: true,
                 markAuxDates: true,
                 drawIterations: true,
-                // displayProjectName: false,
+                // showProjectName: false,
                 // displayWidth: 50,
                 // tags: ["activation", "report"],
                 // project: "/project/52219765529", // csm
@@ -83,8 +84,8 @@ window.dev = {
                 // teamFeatures: "TF13374, TF13360, TF18854, TF19226, TF13393, TF13397", // 16.0
                 // teamFeatures: "77426086652, 59291054867, 59287501066, 59286613915, 59284079199, 80859898716", // 16.0
                 // teamFeatures: "TF29957, TF29959, TF28954", // 16.2
-                // teamFeatures: "TF29957", // iae
-                teamFeatures: "FEA12099", // fea:iae
+                teamFeatures: "TF29957", // iae
+                // teamFeatures: "FEA12099", // fea:iae
                 // teamFeatures: "prj3848", // prj:iae
                 // teamFeatures: "29957 29959;tf28954", // 16.2
                 // teamFeatures: "NON_EX", // non existing
@@ -108,8 +109,8 @@ window.dev = {
             // return [53888803641]; // d16.0
             // return [54389009403]; // s16.0
             // return [87003447824]; // d16.1
-            return [130767064724]; // d16.2
-            // return [130767061600]; // r16.2
+            // return [130767064724]; // d16.2
+            return [130767061600]; // r16.2
             // return [205270911736]; // CSS-INT 9.0 (with PPMFeas)
             //return [49774672980]; // css/int/rel7.3
             //return [53823409519, 53823678379];
