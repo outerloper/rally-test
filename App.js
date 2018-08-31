@@ -394,7 +394,7 @@ Ext.define("MilestoneBurnupWithProjection", Ext.merge({
                 }
 
                 var loadParentsByMilestone = this.loadParentItems(chainedExpression("OR", milestones.map(function (milestone) {
-                    return "Milestones.ObjectID contains " + milestone.getId();
+                    return "Milestones.ObjectID = " + milestone.getId();
                 })));
 
                 var loadParentsByTags = tags.length === 0 ? [] : this.loadParentItems(chainedExpression("OR", tags.map(function (tag) {
